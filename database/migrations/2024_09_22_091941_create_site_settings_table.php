@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('site_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('site_name')->default('Kilo HEALTH');
-            $table->string('logo_url')->nullable();
-            $table->text('footer_about')->nullable();
-            $table->json('footer_categories')->nullable();
-            $table->json('footer_company_links')->nullable();
+            $table->string('key')->unique();
+            $table->string('name');
+            $table->enum('input_type',['text','number','date','boolean','image']); 
+            $table->text('value');
+            $table->text('description');
             $table->timestamps();
         });
 
