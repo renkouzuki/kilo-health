@@ -24,6 +24,8 @@ return new class extends Migration
             $table->unsignedInteger('likes')->default(0);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['title', 'published_at', 'views', 'likes']);
         });
     }
 

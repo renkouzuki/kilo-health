@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamp('viewed_at');
 
             $table->unique(['post_id', 'user_id']);
+            $table->index('viewed_at');
         });
 
     }
