@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('name');
             $table->enum('input_type',['text','number','date','boolean','image']); 
             $table->text('value')->nullable();
-            $table->text('description')->nullable();
             $table->timestamps();
         });
 
