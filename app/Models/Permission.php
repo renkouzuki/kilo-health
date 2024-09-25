@@ -15,4 +15,19 @@ class Permission extends Model
     {
         return $this->belongsToMany(Role::class, 'role_permission');
     }
+
+    public static function defaultPermissions(): array{
+        return [
+            'view_items',
+            'create_items',
+            'update_items',
+            'edit_items',
+            'delete_items',
+            'view_roles',
+            'create_roles',
+            'update_roles',
+            'edit_roles',
+            'delete_roles',
+        ];
+    }
 }
