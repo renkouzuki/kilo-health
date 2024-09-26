@@ -1,21 +1,23 @@
 <?php
 
 use App\Http\Controllers\Authentication;
-use App\Models\Permission;
-use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register' , [Authentication::class , 'register']);
+Route::post('/register',[Authentication::class , 'register']);
+Route::post('/login',[Authentication::class , 'login']);
 
-Route::get('/test' , function(){
-    $data = Permission::pluck('name')->toArray();
-    
-    $test = [];
-    foreach(Role::allRoles() as $role){
-        $test[] = $role;
-    }
 
-    return response()->json($test);
-    
+Route::middleware('auth:sanctum')->group(function(){
+    Route::get('/test',function(Request $req){
+        $data = User::with(['role:id,name' , 'role.permissions:id,name'])->paginate(5);
+        return response()->json($data);
+    })->middleware(['role:admin' , 'permission:view_items']);
+    Route::get('/testView',function(){
+        return response()->json([
+            'msg'=>'hellow world!'
+        ]);
+    })->middleware(['role:admin']);
 });
+

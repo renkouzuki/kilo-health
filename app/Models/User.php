@@ -11,7 +11,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable , HasApiTokens , SoftDeletes;
+    use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -47,16 +47,25 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    
-    public function roles(){
+
+
+    public function role()
+    {
         return $this->belongsTo(Role::class);
     }
 
-    public function posts(){
-        return $this->hasMany(post::class);
+    public function posts()
+    {
+        return $this->hasMany(post::class, 'author_id');
     }
 
-    public function postViews(){
+    public function postViews()
+    {
         return $this->hasMany(post_view::class);
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->role->permissions->contains('name', $permission);
     }
 }
