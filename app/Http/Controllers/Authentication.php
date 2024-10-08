@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\CustomValidation\CustomValue;
+use App\Models\Role;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -27,10 +28,13 @@ class Authentication extends Controller
                 'password' => 'required|string|min:8|confirmed'
             ])->validate();
 
+            $defaultId = Role::where('name', 'user')->first()->id;
+
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password'])
+                'password' => Hash::make($validated['password']),
+                'role_id' => $defaultId
             ]);
 
             $expireDate = now()->addDays(7);
