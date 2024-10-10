@@ -67,19 +67,4 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(post_view::class);
     }
-
-    public function hasPermission(string $permission): bool
-    {
-        return $this->role->permissions->contains('name', $permission);
-    }
-
-    public function sendPasswordResetNotification($token)
-    {
-        $this->notify(new PasswordResetNotification($token));
-    }
-
-    public function sendEmailVerificationNotification()
-    {
-        $this->notify(new VerifyEmailNotification());
-    }
 }
