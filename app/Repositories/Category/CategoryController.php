@@ -2,7 +2,26 @@
 
 namespace App\Repositories\Category;
 
-class CategoryController {
+use App\Models\categorie;
 
-    /// call a method here to be reusable
+class CategoryController implements CategoryInterface
+{
+
+    public function all(): categorie
+    {
+        $category = categorie::all()->latest();
+
+        return $category;
+    }
+
+    public function find(int $id): categorie
+    {
+        return categorie::all()->latest();
+    }
+
+    public function create(array $data): void {}
+
+    public function update($id, array $data): void {}
+
+    public function delete($id): void {}
 }

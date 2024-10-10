@@ -2,7 +2,12 @@
 
 namespace App\Repositories\UploadMedias;
 
-interface UploadMediaInterface {
+use App\Models\upload_media;
 
-    /// call a method here to be reusable
+interface UploadMediaInterface {
+    public function all():upload_media;
+    public function find(int $id):upload_media;
+    public function create(array $data):void;
+    public function update(int $id, array $data):void;
+    public function delete(int $id):void;
 }

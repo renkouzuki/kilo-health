@@ -2,7 +2,12 @@
 
 namespace App\Repositories\Topics;
 
-interface TopicInterface {
+use App\Models\topic;
 
-    /// call a method here to be reusable
+interface TopicInterface {
+    public function all():topic;
+    public function find(int $id):topic;
+    public function create(array $data):void;
+    public function update(int $id, array $data):void;
+    public function delete(int $id):void;
 }

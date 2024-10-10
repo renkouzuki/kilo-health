@@ -2,7 +2,12 @@
 
 namespace App\Repositories\SiteSettings;
 
-interface SiteSettingInterface {
+use App\Models\site_setting;
 
-    /// call a method here to be reusable
+interface SiteSettingInterface {
+    public function all():site_setting;
+    public function find(int $id):site_setting;
+    public function create(array $data):void;
+    public function update(int $id, array $data):void;
+    public function delete(int $id):void;
 }

@@ -2,7 +2,12 @@
 
 namespace App\Repositories\Category;
 
-interface CategoryInterface {
+use App\Models\categorie;
 
-    /// call a method here to be reusable
+interface CategoryInterface {
+    public function all():categorie;
+    public function find(int $id):categorie;
+    public function create(array $data):void;
+    public function update(int $id, array $data):void;
+    public function delete(int $id):void;
 }
