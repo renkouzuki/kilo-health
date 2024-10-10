@@ -144,7 +144,8 @@ class UserController implements UserInterface
                 'avatar' => $req->hasFile('avatar') ? $req->file('avatar')->store('avatars', 'public') : null,
             ];
             $data = array_filter($data);
-            $user = User::findOrFail($req->user()->id)->update($data);
+            $user = User::findOrFail($req->user()->id);
+            $user->update($data);
             return $user;
         } catch (ModelNotFoundException $e) {
             throw $e;
