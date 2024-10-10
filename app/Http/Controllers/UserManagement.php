@@ -38,7 +38,7 @@ class UserManagement extends Controller
                 'users' => UserResource::collection($users)
             ], 200);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to update role permissions'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to update role permissions' , 'err'=>$e->getMessage()], 500);
         }
     }
 
@@ -53,10 +53,10 @@ class UserManagement extends Controller
                 'users' => new UserResource($user)
             ], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => true, 'message' => 'User not found'], 404);
+            return response()->json(['success' => true, 'message' => 'User not found' , 'err'=>$e->getMessage()], 404);
         } catch (\Exception $e) {
             Log::error('Error retrieving user details: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to get user details'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to get user details' , 'err'=>$e->getMessage()], 500);
         }
     }
 
@@ -77,9 +77,9 @@ class UserManagement extends Controller
             ], 200);
         } catch (ValidationException $e) {
             $customErrorMessage = 'Oops, looks like something went wrong with your submission.';
-            return response(['success' => false, 'message' => $customErrorMessage, 'issues' => $e->errors()], 422);
+            return response(['success' => false, 'message' => $customErrorMessage, 'err'=>$e->getMessage()], 422);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to update role permissions'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to update role permissions', 'err'=>$e->getMessage()], 500);
         }
     }
 
@@ -100,7 +100,7 @@ class UserManagement extends Controller
                 'user' => $user,
             ], 200);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to update user role'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to update user role' , 'err'=>$e->getMessage()], 500);
         }
     }
 
@@ -110,10 +110,9 @@ class UserManagement extends Controller
             $this->Repository->softDelete($userId);
             return response()->json(['success' => true, 'message' => 'User soft deleted successfully'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => 'User not found'], 404);
+            return response()->json(['success' => false, 'message' => 'User not found', 'err' => $e->getMessage()], 404);
         } catch (\Exception $e) {
-            Log::error('Error soft deleting user: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to soft delete user'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to soft delete user', 'err' => $e->getMessage()], 500);
         }
     }
 
@@ -124,8 +123,7 @@ class UserManagement extends Controller
             $data = $this->Repository->getTrash($perPage);
             return response()->json(['success' => false, 'data' => new softdeleteuserCollection($data), 'message' => 'Soft deleted users retrieved successfully'], 200);
         } catch (\Exception $e) {
-            Log::error('Error retrieving trashed users: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to get softdelete users'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to get softdelete users', 'err' => $e->getMessage()], 500);
         }
     }
 
@@ -135,7 +133,7 @@ class UserManagement extends Controller
             $this->Repository->restore($userId);
             return response()->json(['success' => true, 'message' => 'User restored successfully'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => 'User not found'], 404);
+            return response()->json(['success' => false, 'message' => 'User not found', 'err' => $e->getMessage()], 404);
         } catch (\Exception $e) {
             Log::error('Error restoring user: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to restore user'], 500);
@@ -148,10 +146,10 @@ class UserManagement extends Controller
             $this->Repository->forceDelete($userId);
             return response()->json(['success' => true, 'message' => 'User permanently deleted successfully'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => 'User not found'], 404);
+            return response()->json(['success' => false, 'message' => 'User not found', 'err' => $e->getMessage()], 404);
         } catch (\Exception $e) {
             Log::error('Error permanently deleting user: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to  Force Delete user'], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to  Force Delete user', 'err' => $e->getMessage()], 500);
         }
     }
 
@@ -167,14 +165,15 @@ class UserManagement extends Controller
             $result = $this->Repository->editUserInfo($this->req);
             return response()->json(['success' => true, 'message' => 'User update successfully', 'data' => $result], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => 'User not found'], 404);
+            return response()->json(['success' => false, 'message' => 'User not found', 'err' => $e->getMessage()], 404);
         } catch (\Exception $e) {
             Log::error('Error permanently deleting user: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Failed to  update user' ,'err'=>$e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to  update user', 'err' => $e->getMessage()], 500);
         }
     }
 
-    public function getAuditLogs(GetAuditLogsRequest $req){
+    public function getAuditLogs(GetAuditLogsRequest $req)
+    {
         $userId = $req->user_id;
         $perPage = $this->req->per_page ?? 10;
         try {
@@ -185,7 +184,7 @@ class UserManagement extends Controller
                 'users' => auditlogResource::collection($users)
             ], 200);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to update role permissions'], 500);
+            return response()->json(['success' => false, 'message' => 'something went wrong', 'err' => $e->getMessage()], 500);
         }
     }
 }

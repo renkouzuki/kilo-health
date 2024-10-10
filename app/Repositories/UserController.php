@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController implements UserInterface
 {
@@ -25,17 +26,21 @@ class UserController implements UserInterface
 
     public function getUsers(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
-        return User::with(['role:id,name', 'role.permissions:id,name'])
-            ->when(
-                $filters['search'] ?? null,
-                fn($query, $search) =>
-                $query->where(
-                    fn($q) =>
-                    $q->where('name', 'LIKE', "%{$search}%")
-                        ->orWhere('email', 'LIKE', "%{$search}%")
+        try {
+            return User::with(['role:id,name', 'role.permissions:id,name'])
+                ->when(
+                    $filters['search'] ?? null,
+                    fn($query, $search) =>
+                    $query->where(
+                        fn($q) =>
+                        $q->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('email', 'LIKE', "%{$search}%")
+                    )
                 )
-            )
-            ->paginate($perPage);
+                ->paginate($perPage);
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     public function getDetails(User $user): User
@@ -46,7 +51,7 @@ class UserController implements UserInterface
         } catch (ModelNotFoundException $e) {
             throw $e;
         } catch (\Exception $e) {
-            throw new \Exception('Failed to soft delete');
+            throw $e;
         }
     }
 
@@ -96,14 +101,18 @@ class UserController implements UserInterface
         } catch (ModelNotFoundException $e) {
             throw $e;
         } catch (\Exception $e) {
-            throw new \Exception('Failed to soft delete');
+            throw $e;
         }
     }
 
     public function getTrash(int $perPage): LengthAwarePaginator
     {
-        $user = User::onlyTrashed()->paginate($perPage);
-        return $user;
+        try {
+            $user = User::onlyTrashed()->paginate($perPage);
+            return $user;
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     public function restore(int $userId): void
@@ -116,7 +125,7 @@ class UserController implements UserInterface
         } catch (ModelNotFoundException $e) {
             throw $e;
         } catch (\Exception $e) {
-            throw new \Exception('Failed to restore');
+            throw $e;
         }
     }
 
@@ -130,34 +139,47 @@ class UserController implements UserInterface
         } catch (ModelNotFoundException $e) {
             throw $e;
         } catch (\Exception $e) {
-            throw new \Exception('Failed to permanently delete');
+            throw $e;
         }
     }
 
     public function editUserInfo(Request $req): User
     {
         try {
+            $user = User::findOrFail($req->user()->id);
             $data = [
                 'name' => $req->name,
                 'email' => $req->email,
-                'password' => $req->filled('password') ? Hash::make($req->password) : null,
-                'avatar' => $req->hasFile('avatar') ? $req->file('avatar')->store('avatars', 'public') : null,
+                'password' => $req->filled('password') && Hash::make($req->password)
             ];
+
+            if ($req->hasFile('avatar')) {
+                if ($user->avatar) {
+                    Storage::disk('s3')->delete($user->avatar);
+                }
+
+                $data['avatar'] = $req->file('avatar')->store('avatar', 's3');
+            }
+
             $data = array_filter($data);
-            $user = User::findOrFail($req->user()->id);
+
             $user->update($data);
             return $user;
         } catch (ModelNotFoundException $e) {
             throw $e;
         } catch (\Exception $e) {
-            throw new \Exception('Failed to permanently delete');
+            throw $e;
         }
     }
 
     public function getAuditLogs(int $userId, int $perPage = 10): LengthAwarePaginator
     {
-        return AuditLogs::where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        try {
+            return AuditLogs::where('user_id', $userId)
+                ->orderBy('created_at', 'desc')
+                ->paginate($perPage);
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 }

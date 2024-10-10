@@ -26,7 +26,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'role_id'
+        'role_id',
+        'avatar'
     ];
 
     /**
@@ -66,5 +67,20 @@ class User extends Authenticatable implements MustVerifyEmail
     public function postViews()
     {
         return $this->hasMany(post_view::class);
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->role->permissions->contains('name', $permission);
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new PasswordResetNotification($token));
+    }
+
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new VerifyEmailNotification());
     }
 }
