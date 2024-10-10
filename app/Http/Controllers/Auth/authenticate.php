@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
 use App\CustomValidation\CustomValue;
+use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use Exception;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
-class Authentication extends Controller
+class authenticate extends Controller
 {
     private Request $req;
     public function __construct(Request $req)

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\GetAuditLogsRequest;
+use App\Http\Resources\auditlogResource;
 use App\Http\Resources\softdeleteuserCollection;
 use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
-use App\Repositories\RepositoryInterface;
+use App\Repositories\UserInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +20,7 @@ class UserManagement extends Controller
 
     protected $Repository;
 
-    public function __construct(RepositoryInterface $repository, Request $req)
+    public function __construct(UserInterface $repository, Request $req)
     {
         $this->req = $req;
         $this->Repository = $repository;
@@ -62,8 +64,8 @@ class UserManagement extends Controller
     {
 
         $this->req->validate([
-            'permissions' => 'required|array|int',
-            'permissions.*' => 'exists:permissions,id',
+            'permissions' => 'required|array',
+            'permissions.*' => 'int|exists:permissions,id',
         ]);
 
         try {
@@ -150,6 +152,40 @@ class UserManagement extends Controller
         } catch (\Exception $e) {
             Log::error('Error permanently deleting user: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Failed to  Force Delete user'], 500);
+        }
+    }
+
+    public function UpdateUserInfo()
+    {
+        try {
+            $this->req->validate([
+                'name' => 'sometimes|string|max:255',
+                'email' => 'sometimes|string|email',
+                'password' => 'sometimes|string|min:8|confirmed',
+                'avatar' => 'sometimes|file|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
+            $result = $this->Repository->editUserInfo($this->req);
+            return response()->json(['success' => true, 'message' => 'User update successfully', 'data' => $result], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'User not found'], 404);
+        } catch (\Exception $e) {
+            Log::error('Error permanently deleting user: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Failed to  update user' ,'err'=>$e->getMessage()], 500);
+        }
+    }
+
+    public function getAuditLogs(GetAuditLogsRequest $req){
+        $userId = $req->user_id;
+        $perPage = $this->req->per_page ?? 10;
+        try {
+            $users = $this->Repository->getAuditLogs($userId, $perPage);
+            return response()->json([
+                'success' => true,
+                'message' => 'Auditlog retrieved successfully',
+                'users' => auditlogResource::collection($users)
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to update role permissions'], 500);
         }
     }
 }

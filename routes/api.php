@@ -1,18 +1,20 @@
 <?php
 
 use App\Events\testing;
-use App\Http\Controllers\Authentication;
+use App\Http\Controllers\Auth\authenticate;
 use App\Http\Controllers\UserManagement;
 use App\TestMethod\SwitchMe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/register',[Authentication::class , 'register']);
-Route::post('/login',[Authentication::class , 'login']);
+Route::post('/register',[authenticate::class , 'register']);
+Route::post('/login',[authenticate::class , 'login']);
 
 
 Route::prefix('users')->middleware('auth:sanctum')->group(function(){
-    Route::post('/logout' , [Authentication::class , 'logout']);
+    Route::put('/update_user',[UserManagement::class , 'UpdateUserInfo']);
+    Route::post('/logout' , [authenticate::class , 'logout']);
+    
 
     Route::get('/testView',function(){
         $test = new SwitchMe();
@@ -30,6 +32,7 @@ Route::prefix('users')->middleware('auth:sanctum')->group(function(){
     Route::delete('/{userId}/soft-delete', [UserManagement::class, 'SoftDeleteUser'])->middleware(['role:super_admin' , 'permission:delete_roles']);
     Route::post('/{userId}/restore', [UserManagement::class, 'RestoreUser'])->middleware(['role:super_admin' , 'permission:create_roles']);
     Route::delete('/{userId}/force-delete', [UserManagement::class, 'ForceDeleteUser'])->middleware(['role:super_admin' , 'permission:delete_roles']);
+    Route::get('/auditlog/{userId}' , [UserManagement::class , 'getAuditLogs'])->middleware(['role:super_admin' , 'permission:delete_roles']);
 });
 
 
