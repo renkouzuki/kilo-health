@@ -8,7 +8,7 @@ use App\Http\Resources\softdeleteuserCollection;
 use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
-use App\Repositories\UserInterface;
+use App\Repositories\User\UserInterface;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
