@@ -33,7 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/roles/{role}', [UserManagement::class, 'UpdateRolePermissions'])->middleware(['role:super_admin', 'permission:edit_roles']);
         Route::put('/{user}/role', [UserManagement::class, 'UpdateUserRole'])->middleware(['role:super_admin', 'permission:edit_roles']);
         ///////////////////
-        
+
         Route::delete('/{userId}/soft-delete', [UserManagement::class, 'SoftDeleteUser'])->middleware(['role:super_admin', 'permission:delete_roles']);
         Route::post('/{userId}/restore', [UserManagement::class, 'RestoreUser'])->middleware(['role:super_admin', 'permission:create_roles']);
         Route::delete('/{userId}/force-delete', [UserManagement::class, 'ForceDeleteUser'])->middleware(['role:super_admin', 'permission:delete_roles']);
@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/auditlog/{userId}', [UserManagement::class, 'getAuditLogs'])->middleware(['role:super_admin', 'permission:delete_roles']);
     });
 
+    ////////////// heng visal routes
     Route::prefix('categories')->group(function () {
         Route::get('/', [CategoryController::class, 'index']);
         Route::post('/', [CategoryController::class, 'store']);
@@ -60,7 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/categories/{category}/topics', [TopicController::class, 'getByCategory']);
     });
 
-
+    /////////////// jung kook routes
     Route::prefix('post')->group(function () {});
 
     Route::prefix('post_views')->group(function () {});

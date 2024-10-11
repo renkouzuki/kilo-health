@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        $this->call(gen_user_roleandper::class);
+        $this->call([
+            category::class, // php artisan db:seed --class=category
+            topic::class, // php artisan db:seed --class=topic
+            gen_user_roleandper::class // php artisan db:seed --class=gen_user_roleandper
+        ]);
     }
 }
