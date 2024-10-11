@@ -7,6 +7,7 @@ use App\Repositories\Topics\TopicInterface;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class TopicController extends Controller
 {
@@ -87,6 +88,16 @@ class TopicController extends Controller
             return response()->json(['success' => true, 'message' => 'successfully deleted topic data'], 204);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error deleting topic', 'err' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getByCategory(int $categoryId): AnonymousResourceCollection|JsonResponse
+    {
+        try {
+            $topics = $this->Repository->getTopicsByCategory($categoryId);
+            return response()->json(['success' => true , 'message' => 'Successfully retrieving topics' , 'data'=>TopicResource::collection($topics)],200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error retrieving topics', 'err' => $e->getMessage()], 500);
         }
     }
 }

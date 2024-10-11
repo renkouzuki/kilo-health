@@ -94,4 +94,17 @@ class CategoryController extends Controller
             return response()->json(['success' => false, 'message' => 'Error deleting category', 'err' => $e->getMessage()], 500);
         }
     }
+
+    public function showBySlug(string $slug): JsonResponse
+    {
+        try {
+            $category = $this->Repository->getCategoryBySlug($slug);
+            if (!$category) {
+                return response()->json(['message' => 'Category not found'], 404);
+            }
+            return response()->json(['success' => true, 'message' => 'successfully retrieved category', 'data' => new CategoryResource($category)], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error retrieving category', 'err' => $e->getMessage()], 500);
+        }
+    }
 }
