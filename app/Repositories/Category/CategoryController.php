@@ -3,25 +3,81 @@
 namespace App\Repositories\Category;
 
 use App\Models\categorie;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Log;
 
 class CategoryController implements CategoryInterface
 {
 
-    public function all(): categorie
+    public function getAllCategories(): Collection
     {
-        $category = categorie::all()->latest();
-
-        return $category;
+        try {
+            return categorie::all();
+        } catch (Exception $e) {
+            Log::error('Database error: ' . $e->getMessage());
+            throw new Exception('Error retrieving categories');
+        }
     }
 
-    public function find(int $id): categorie
+    public function getCategoryById(int $id): ?categorie
     {
-        return categorie::all()->latest();
+        try {
+            return categorie::findOrFail($id);
+        } catch (ModelNotFoundException $e) {
+            return null;
+        } catch (Exception $e) {
+            Log::error('Database error: ' . $e->getMessage());
+            throw new Exception('Error retrieving category');
+        }
     }
 
-    public function create(array $data): void {}
+    public function deleteCategory(int $id): bool
+    {
+        try {
+            $category = categorie::findOrFail($id);
+            return $category->delete();
+        } catch (ModelNotFoundException $e) {
+            return false;
+        } catch (Exception $e) {
+            Log::error('Database error: ' . $e->getMessage());
+            throw new Exception('Error deleting category');
+        }
+    }
 
-    public function update($id, array $data): void {}
+    public function createCategory(array $categoryDetails): categorie
+    {
+        try {
+            return categorie::create($categoryDetails);
+        } catch (Exception $e) {
+            Log::error('Database error: ' . $e->getMessage());
+            throw new Exception('Error creating category');
+        }
+    }
 
-    public function delete($id): void {}
+    public function updateCategory(int $id, array $newDetails): bool
+    {
+        try {
+            $category = categorie::findOrFail($id);
+            return $category->update($newDetails);
+        } catch (ModelNotFoundException $e) {
+            return false;
+        } catch (Exception $e) {
+            Log::error('Database error: ' . $e->getMessage());
+            throw new Exception('Error updating category');
+        }
+    }
+
+    public function getCategoryBySlug(string $slug): ?categorie
+    {
+        try {
+            return categorie::where('slug', $slug)->firstOrFail();
+        } catch (ModelNotFoundException $e) {
+            return null;
+        } catch (Exception $e) {
+            Log::error('Database error: ' . $e->getMessage());
+            throw new Exception('Error retrieving category by slug');
+        }
+    }
 }

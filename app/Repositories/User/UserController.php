@@ -6,12 +6,14 @@ use App\Models\AuditLogs;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditLogService;
+use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class UserController implements UserInterface
@@ -29,7 +31,7 @@ class UserController implements UserInterface
         try {
             return User::with(['role:id,name', 'role.permissions:id,name'])
                 ->when(
-                    $filters['search'] ?? null,
+                    $search ?? null,
                     fn($query, $search) =>
                     $query->where(
                         fn($q) =>
@@ -38,27 +40,27 @@ class UserController implements UserInterface
                     )
                 )
                 ->paginate($perPage);
-        } catch (\Exception $e) {
-            throw $e;
+        } catch (Exception $e) {
+            Log::error('Error retrieving users: ' . $e->getMessage());
+            throw new Exception('Error retrieving users');
         }
     }
 
     public function getDetails(User $user): User
     {
         try {
-            $user->load(['role:id,name', 'role.permissions:id,name']);
-            return $user;
+            return $user->load(['role:id,name', 'role.permissions:id,name']);
         } catch (ModelNotFoundException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            throw $e;
+            throw new Exception('User not found');
+        } catch (Exception $e) {
+            Log::error('Error retrieving user details: ' . $e->getMessage());
+            throw new Exception('Error retrieving user details');
         }
     }
 
     public function updatePermissions(Role $role, array $permissions): Role
     {
         DB::beginTransaction();
-
         try {
             $role->permissions()->sync($permissions);
             DB::commit();
@@ -66,16 +68,16 @@ class UserController implements UserInterface
             $this->logService->log(Auth::id(), 'updated_permissions', Role::class, $role->id, json_encode(['permissions' => $permissions]));
 
             return $role->load('permissions');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            throw $e;
+            Log::error('Error updating permissions: ' . $e->getMessage());
+            throw new Exception('Error updating permissions');
         }
     }
 
     public function updateRole(User $user, int $roleId): User
     {
         DB::beginTransaction();
-
         try {
             $user->role()->associate($roleId);
             $user->save();
@@ -85,9 +87,10 @@ class UserController implements UserInterface
             $this->logService->log(Auth::id(), 'updated_role', User::class, $user->id, json_encode(['role_id' => $roleId]));
 
             return $user->load('role');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            throw $e;
+            Log::error('Error updating user role: ' . $e->getMessage());
+            throw new Exception('Error updating user role');
         }
     }
 
@@ -99,19 +102,20 @@ class UserController implements UserInterface
 
             $this->logService->log(Auth::id(), 'soft_deleted', User::class, $user->id);
         } catch (ModelNotFoundException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            throw $e;
+            throw new Exception('User not found');
+        } catch (Exception $e) {
+            Log::error('Error soft deleting user: ' . $e->getMessage());
+            throw new Exception('Error soft deleting user');
         }
     }
 
     public function getTrash(int $perPage): LengthAwarePaginator
     {
         try {
-            $user = User::onlyTrashed()->paginate($perPage);
-            return $user;
-        } catch (\Exception $e) {
-            throw $e;
+            return User::onlyTrashed()->paginate($perPage);
+        } catch (Exception $e) {
+            Log::error('Error retrieving trashed users: ' . $e->getMessage());
+            throw new Exception('Error retrieving trashed users');
         }
     }
 
@@ -123,9 +127,10 @@ class UserController implements UserInterface
 
             $this->logService->log(Auth::id(), 'restored', User::class, $user->id);
         } catch (ModelNotFoundException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            throw $e;
+            throw new Exception('User not found');
+        } catch (Exception $e) {
+            Log::error('Error restoring user: ' . $e->getMessage());
+            throw new Exception('Error restoring user');
         }
     }
 
@@ -137,9 +142,10 @@ class UserController implements UserInterface
 
             $this->logService->log(Auth::id(), 'permanently_deleted', User::class, $user->id);
         } catch (ModelNotFoundException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            throw $e;
+            throw new Exception('User not found');
+        } catch (Exception $e) {
+            Log::error('Error permanently deleting user: ' . $e->getMessage());
+            throw new Exception('Error permanently deleting user');
         }
     }
 
@@ -150,7 +156,7 @@ class UserController implements UserInterface
             $data = [
                 'name' => $req->name,
                 'email' => $req->email,
-                'password' => $req->filled('password') && Hash::make($req->password)
+                'password' => $req->filled('password') ? Hash::make($req->password) : null
             ];
 
             if ($req->hasFile('avatar')) {
@@ -166,9 +172,10 @@ class UserController implements UserInterface
             $user->update($data);
             return $user;
         } catch (ModelNotFoundException $e) {
-            throw $e;
-        } catch (\Exception $e) {
-            throw $e;
+            throw new Exception('User not found');
+        } catch (Exception $e) {
+            Log::error('Error editing user info: ' . $e->getMessage());
+            throw new Exception('Error editing user info');
         }
     }
 
@@ -178,8 +185,9 @@ class UserController implements UserInterface
             return AuditLogs::where('user_id', $userId)
                 ->orderBy('created_at', 'desc')
                 ->paginate($perPage);
-        } catch (\Exception $e) {
-            throw $e;
+        } catch (Exception $e) {
+            Log::error('Error retrieving audit logs: ' . $e->getMessage());
+            throw new Exception('Error retrieving audit logs');
         }
     }
 }
