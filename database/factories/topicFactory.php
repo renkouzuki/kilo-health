@@ -21,7 +21,7 @@ class topicFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->unique()->words(3, true),
+            'name' => fake()->unique()->words(3, true),
             'category_id' => categorie::factory(),
         ];
     }

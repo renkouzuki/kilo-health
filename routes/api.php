@@ -29,6 +29,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [UserManagement::class, 'ShowAll'])->middleware(['role:super_admin', 'permission:view_roles']);
         Route::get('/trashed', [UserManagement::class, 'ShowTrashUsers'])->middleware(['role:super_admin', 'permission:view_roles']);
         Route::get('/{user}', [UserManagement::class, 'GetUserDetails'])->middleware(['role:super_admin', 'permission:view_roles']);
+        
         /////////////////// todo fixes this it suppose to work like crud too and don't forget giving it own route -- assign to sopheak
         Route::put('/roles/{role}', [UserManagement::class, 'UpdateRolePermissions'])->middleware(['role:super_admin', 'permission:edit_roles']);
         Route::put('/{user}/role', [UserManagement::class, 'UpdateUserRole'])->middleware(['role:super_admin', 'permission:edit_roles']);

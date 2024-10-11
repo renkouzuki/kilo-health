@@ -6,9 +6,9 @@ use App\Models\categorie;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Model>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Categorie>
  */
-class categoryFactory extends Factory
+class categorieFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -20,11 +20,11 @@ class categoryFactory extends Factory
 
     public function definition(): array
     {
-        $name = $this->faker->unique()->word();
+        $name = fake()->unique()->word();
         return [
             'name' => $name,
             'slug' => Str::slug($name),
-            'icon' => $this->faker->imageUrl(100, 100)
+            'icon' => fake()->imageUrl(100, 100)
         ];
     }
 }

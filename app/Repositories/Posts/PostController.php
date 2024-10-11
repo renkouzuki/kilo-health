@@ -3,23 +3,52 @@
 namespace App\Repositories\Posts;
 
 use App\Models\post;
+use Illuminate\Pagination\LengthAwarePaginator;
 
-class PostController {
-    public function all(): post
+class PostController implements PostInterface {
+    
+    public function getAllPosts(array $filters, int $perPage): LengthAwarePaginator
     {
-        $category = post::all()->latest();
-
-        return $category;
+        
     }
 
-    public function find(int $id): post
+    public function getPostById(int $id): ?post
     {
-        return post::all()->latest();
+        
     }
 
-    public function create(array $data): void {}
+    public function createPost(array $postData): post
+    {
+        
+    }
 
-    public function update($id, array $data): void {}
+    public function updatePost(int $id, array $postData): bool
+    {
+        
+    }
 
-    public function delete($id): void {}
+    public function deletePost(int $id): bool
+    {
+        
+    }
+
+    public function getPostsByCategory(int $categoryId, int $perPage): LengthAwarePaginator
+    {
+        
+    }
+
+    public function getPostsByAuthor(int $authorId, int $perPage): LengthAwarePaginator
+    {
+        
+    }
+
+    public function incrementViews(int $postId): bool
+    {
+        
+    }
+
+    public function incrementLikes(int $postId): bool
+    {
+        
+    }
 }

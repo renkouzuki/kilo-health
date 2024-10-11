@@ -1,8 +1,6 @@
 <?php
 
 namespace Database\Seeders;
-
-use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -16,8 +14,8 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         $this->call([
-            category::class, // php artisan db:seed --class=category
-            topic::class, // php artisan db:seed --class=topic
+            categorieSeeder::class, // php artisan db:seed --class=categorieSeeder
+            topicSeeder::class, // php artisan db:seed --class=topicSeeder
             gen_user_roleandper::class // php artisan db:seed --class=gen_user_roleandper
         ]);
     }
