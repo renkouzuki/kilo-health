@@ -3,23 +3,58 @@
 namespace App\Repositories\UploadMedias;
 
 use App\Models\upload_media;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
-class UploadMediaController {
-    public function all(): upload_media
+class UploadMediaController implements UploadMediaInterface
+{
+    public function uploadMedia(UploadedFile $file, int $postId): upload_media
     {
-        $category = upload_media::all()->latest();
+        try {
+            $path = $file->store('post_media', 'public');
 
-        return $category;
+            return upload_media::create([
+                'url' => $path,
+                'post_id' => $postId
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error uploading media: ' . $e->getMessage());
+            throw new Exception('Error uploading media');
+        }
     }
 
-    public function find(int $id): upload_media
+    public function getMediaByPost(int $postId): Collection
     {
-        return upload_media::all()->latest();
+        try {
+            return upload_media::where('post_id', $postId)->get();
+        } catch (Exception $e) {
+            Log::error('Error retrieving media: ' . $e->getMessage());
+            throw new Exception('Error retrieving media');
+        }
     }
 
-    public function create(array $data): void {}
+    public function deleteMedia(int $mediaId): bool
+    {
+        try {
+            $media = upload_media::findOrFail($mediaId);
+            Storage::disk('public')->delete($media->url);
+            return $media->delete();
+        } catch (Exception $e) {
+            Log::error('Error deleting media: ' . $e->getMessage());
+            throw new Exception('Error deleting media');
+        }
+    }
 
-    public function update($id, array $data): void {}
-
-    public function delete($id): void {}
+    public function getMediaById(int $mediaId): ?upload_media
+    {
+        try {
+            return upload_media::find($mediaId);
+        } catch (Exception $e) {
+            Log::error('Error retrieving media: ' . $e->getMessage());
+            throw new Exception('Error retrieving media');
+        }
+    }
 }

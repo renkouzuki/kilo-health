@@ -3,23 +3,68 @@
 namespace App\Repositories\SiteSettings;
 
 use App\Models\site_setting;
+use Exception;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
-class SiteSettingController {
-    public function all(): site_setting
+class SiteSettingController implements SiteSettingInterface
+{
+
+    public function getAllSettings(): Collection
     {
-        $category = site_setting::all()->latest();
-
-        return $category;
+        try {
+            return site_setting::all();
+        } catch (Exception $e) {
+            Log::error('Error retrieving all settings: ' . $e->getMessage());
+            throw new Exception('Error retrieving all settings');
+        }
     }
 
-    public function find(int $id): site_setting
+    public function getSetting(string $key): ?site_setting
     {
-        return site_setting::all()->latest();
+        try {
+            return site_setting::where('key', $key)->first();
+        } catch (Exception $e) {
+            Log::error('Error retrieving setting: ' . $e->getMessage());
+            throw new Exception('Error retrieving setting');
+        }
     }
 
-    public function create(array $data): void {}
+    public function updateSetting(string $key, string $value): bool
+    {
+        try {
+            $setting = site_setting::where('key', $key)->first();
+            if (!$setting) {
+                return false;
+            }
+            return $setting->update(['value' => $value]);
+        } catch (Exception $e) {
+            Log::error('Error updating setting: ' . $e->getMessage());
+            throw new Exception('Error updating setting');
+        }
+    }
 
-    public function update($id, array $data): void {}
+    public function createSetting(array $data): site_setting
+    {
+        try {
+            return site_setting::create($data);
+        } catch (Exception $e) {
+            Log::error('Error creating setting: ' . $e->getMessage());
+            throw new Exception('Error creating setting');
+        }
+    }
 
-    public function delete($id): void {}
+    public function deleteSetting(string $key): bool
+    {
+        try {
+            $setting = site_setting::where('key', $key)->first();
+            if (!$setting) {
+                return false;
+            }
+            return $setting->delete();
+        } catch (Exception $e) {
+            Log::error('Error deleting setting: ' . $e->getMessage());
+            throw new Exception('Error deleting setting');
+        }
+    }
 }

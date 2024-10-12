@@ -3,11 +3,13 @@
 namespace App\Repositories\SiteSettings;
 
 use App\Models\site_setting;
+use Illuminate\Database\Eloquent\Collection;
 
-interface SiteSettingInterface {
-    public function all():site_setting;
-    public function find(int $id):site_setting;
-    public function create(array $data):void;
-    public function update(int $id, array $data):void;
-    public function delete(int $id):void;
+interface SiteSettingInterface
+{
+    public function getAllSettings(): Collection;
+    public function getSetting(string $key): ?site_setting;
+    public function updateSetting(string $key, string $value): bool;
+    public function createSetting(array $data): site_setting;
+    public function deleteSetting(string $key): bool;
 }

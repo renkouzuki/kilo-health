@@ -82,6 +82,19 @@ class CategoryController extends Controller
         }
     }
 
+    public function showBySlug(string $slug): JsonResponse
+    {
+        try {
+            $category = $this->Repository->getCategoryBySlug($slug);
+            if (!$category) {
+                return response()->json(['message' => 'Category not found'], 404);
+            }
+            return response()->json(['success' => true, 'message' => 'successfully retrieved category', 'data' => new CategoryResource($category)], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error retrieving category', 'err' => $e->getMessage()], 500);
+        }
+    }
+
     public function destroy(int $id)
     {
         try {
@@ -95,16 +108,39 @@ class CategoryController extends Controller
         }
     }
 
-    public function showBySlug(string $slug): JsonResponse
+    public function restore(int $id): JsonResponse
     {
         try {
-            $category = $this->Repository->getCategoryBySlug($slug);
-            if (!$category) {
+            $restored = $this->Repository->restoreCategory($id);
+            if (!$restored) {
                 return response()->json(['message' => 'Category not found'], 404);
             }
-            return response()->json(['success' => true, 'message' => 'successfully retrieved category', 'data' => new CategoryResource($category)], 200);
+            return response()->json(['success' => true, 'message' => 'Category restored successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error retrieving category', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Error trying to restore category', 'err' => $e->getMessage()], 500);
+        }
+    }
+
+    public function forceDelete(int $id): JsonResponse
+    {
+        try {
+            $deleted = $this->Repository->forceDeleteCategory($id);
+            if (!$deleted) {
+                return response()->json(['message' => 'Category not found'], 404);
+            }
+            return response()->json(['success' => true, 'message' => 'successfully permenantly deleted category'], 204);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error permenatly deleted category', 'err' => $e->getMessage()], 500);
+        }
+    }
+
+    public function trashed(): JsonResponse
+    {
+        try {
+            $trashedCategories = $this->Repository->getTrashedCategories($this->req->per_page ?? 10);
+            return response()->json(['success' => true, 'message' => 'Successfully retrieving soft deleted categories', 'data' => CategoryResource::collection($trashedCategories)], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error retrieving soft deleted categories', 'err' => $e->getMessage()], 500);
         }
     }
 }

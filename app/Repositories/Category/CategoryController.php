@@ -6,6 +6,7 @@ use App\Models\categorie;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Log;
 
 class CategoryController implements CategoryInterface
@@ -30,19 +31,6 @@ class CategoryController implements CategoryInterface
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error retrieving category');
-        }
-    }
-
-    public function deleteCategory(int $id): bool
-    {
-        try {
-            $category = categorie::findOrFail($id);
-            return $category->delete();
-        } catch (ModelNotFoundException $e) {
-            return false;
-        } catch (Exception $e) {
-            Log::error('Database error: ' . $e->getMessage());
-            throw new Exception('Error deleting category');
         }
     }
 
@@ -78,6 +66,49 @@ class CategoryController implements CategoryInterface
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error retrieving category by slug');
+        }
+    }
+
+    public function deleteCategory(int $id): bool
+    {
+        try {
+            $category = categorie::findOrFail($id);
+            return $category->delete();
+        } catch (ModelNotFoundException $e) {
+            return false;
+        } catch (Exception $e) {
+            Log::error('Database error: ' . $e->getMessage());
+            throw new Exception('Error deleting category');
+        }
+    }
+
+    public function restoreCategory(int $id): bool
+    {
+        try {
+            return categorie::withTrashed()->findOrFail($id)->restore();
+        } catch (Exception $e) {
+            Log::error('Error restoring category: ' . $e->getMessage());
+            throw new Exception('Error restoring category');
+        }
+    }
+
+    public function forceDeleteCategory(int $id): bool
+    {
+        try {
+            return categorie::withTrashed()->findOrFail($id)->forceDelete();
+        } catch (Exception $e) {
+            Log::error('Error force deleting category: ' . $e->getMessage());
+            throw new Exception('Error force deleting category');
+        }
+    }
+
+    public function getTrashedCategories(int $perPage): LengthAwarePaginator
+    {
+        try {
+            return categorie::onlyTrashed()->paginate($perPage);
+        } catch (Exception $e) {
+            Log::error('Error retrieving trashed categories: ' . $e->getMessage());
+            throw new Exception('Error retrieving trashed categories');
         }
     }
 }

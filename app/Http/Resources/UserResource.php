@@ -19,6 +19,7 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'avatar' => $this->avatar,
             'role' => $this->role ? new RoleResource($this->role) : null,
             'permissions' => $this->role ? $this->role->permissions->pluck('name')->toArray() : [],
         ];
