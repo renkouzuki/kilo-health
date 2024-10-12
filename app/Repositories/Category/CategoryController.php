@@ -3,14 +3,23 @@
 namespace App\Repositories\Category;
 
 use App\Models\categorie;
+use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class CategoryController implements CategoryInterface
 {
+
+    protected $logService;
+
+    public function __construct(AuditLogService $logService)
+    {
+        $this->logService = $logService;
+    }
 
     public function getAllCategories(): Collection
     {
@@ -37,7 +46,9 @@ class CategoryController implements CategoryInterface
     public function createCategory(array $categoryDetails): categorie
     {
         try {
-            return categorie::create($categoryDetails);
+            $category = categorie::create($categoryDetails);
+            $this->logService->log(Auth::id(), 'created_category', categorie::class, $category->id, json_encode($categoryDetails));
+            return $category;
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error creating category');
@@ -48,7 +59,11 @@ class CategoryController implements CategoryInterface
     {
         try {
             $category = categorie::findOrFail($id);
-            return $category->update($newDetails);
+            $updated = $category->update($newDetails);
+            if ($updated) {
+                $this->logService->log(Auth::id(), 'updated_category', categorie::class, $id, json_encode($newDetails));
+            }
+            return $updated;
         } catch (ModelNotFoundException $e) {
             return false;
         } catch (Exception $e) {
@@ -73,7 +88,11 @@ class CategoryController implements CategoryInterface
     {
         try {
             $category = categorie::findOrFail($id);
-            return $category->delete();
+            $deleted = $category->delete();
+            if ($deleted) {
+                $this->logService->log(Auth::id(), 'deleted_category', categorie::class, $id, null);
+            }
+            return $deleted;
         } catch (ModelNotFoundException $e) {
             return false;
         } catch (Exception $e) {
@@ -85,7 +104,11 @@ class CategoryController implements CategoryInterface
     public function restoreCategory(int $id): bool
     {
         try {
-            return categorie::withTrashed()->findOrFail($id)->restore();
+            $restored = categorie::withTrashed()->findOrFail($id)->restore();
+            if ($restored) {
+                $this->logService->log(Auth::id(), 'restored_category', categorie::class, $id, null);
+            }
+            return $restored;
         } catch (Exception $e) {
             Log::error('Error restoring category: ' . $e->getMessage());
             throw new Exception('Error restoring category');
@@ -95,7 +118,11 @@ class CategoryController implements CategoryInterface
     public function forceDeleteCategory(int $id): bool
     {
         try {
-            return categorie::withTrashed()->findOrFail($id)->forceDelete();
+            $forceDeleted = categorie::withTrashed()->findOrFail($id)->forceDelete();
+            if ($forceDeleted) {
+                $this->logService->log(Auth::id(), 'force_deleted_category', categorie::class, $id, null);
+            }
+            return $forceDeleted;
         } catch (Exception $e) {
             Log::error('Error force deleting category: ' . $e->getMessage());
             throw new Exception('Error force deleting category');

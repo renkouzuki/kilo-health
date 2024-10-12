@@ -3,21 +3,32 @@
 namespace App\Repositories\Posts;
 
 use App\Models\post;
+use App\Services\AuditLogService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PostController implements PostInterface
 {
 
+    protected $logService;
+
+    public function __construct(AuditLogService $logService)
+    {
+        $this->logService = $logService;
+    }
+
     public function getAllPosts(Request $req, int $perPage): LengthAwarePaginator
     {
         try {
+            $filters = $req->only(['search', 'category_id', 'author_id']);
+
             $query = post::with(['category', 'author'])
                 ->when($filters['search'] ?? null, function ($query, $search) {
                     return $query->where('title', 'like', '%' . $search . '%')
@@ -56,7 +67,8 @@ class PostController implements PostInterface
             return DB::transaction(function () use ($postData) {
                 $postData['read_time'] = $this->calculateReadTime($postData['description']);
 
-                $post = Post::create($postData);
+                $post = post::create($postData);
+                $this->logService->log(Auth::id(), 'created_post', post::class, $post->id, json_encode($postData));
                 return $post;
             });
         } catch (Exception $e) {
@@ -75,7 +87,11 @@ class PostController implements PostInterface
                     $postData['read_time'] = $this->calculateReadTime($postData['description']);
                 }
 
-                return $post->update($postData);
+                $updated = $post->update($postData);
+                if ($updated) {
+                    $this->logService->log(Auth::id(), 'updated_post', post::class, $id, json_encode($postData));
+                }
+                return $updated;
             });
         } catch (ModelNotFoundException $e) {
             return false;
@@ -89,7 +105,11 @@ class PostController implements PostInterface
     {
         try {
             $post = post::findOrFail($id);
-            return $post->delete();
+            $deleted = $post->delete();
+            if ($deleted) {
+                $this->logService->log(Auth::id(), 'deleted_post', post::class, $id, null);
+            }
+            return $deleted;
         } catch (ModelNotFoundException $e) {
             return false;
         } catch (Exception $e) {
@@ -192,7 +212,11 @@ class PostController implements PostInterface
     {
         try {
             $post = post::findOrFail($postId);
-            return $post->update(['published_at' => Carbon::now()]);
+            $published = $post->update(['published_at' => Carbon::now()]);
+            if ($published) {
+                $this->logService->log(Auth::id(), 'published_post', post::class, $postId, json_encode(['published_at' => Carbon::now()]));
+            }
+            return $published;
         } catch (ModelNotFoundException $e) {
             return false;
         } catch (Exception $e) {
@@ -205,7 +229,11 @@ class PostController implements PostInterface
     {
         try {
             $post = post::findOrFail($postId);
-            return $post->update(['published_at' => null]);
+            $unpublished = $post->update(['published_at' => null]);
+            if ($unpublished) {
+                $this->logService->log(Auth::id(), 'unpublished_post', post::class, $postId, null);
+            }
+            return $unpublished;
         } catch (ModelNotFoundException $e) {
             return false;
         } catch (Exception $e) {
@@ -225,7 +253,7 @@ class PostController implements PostInterface
             $this->applyFilters($query, $req);
             $this->applySorting($query, $req);
 
-            return $query->paginate($req->input('per_page', 15));
+            return $query->paginate($req->per_page ?? 10);
         } catch (Exception $e) {
             Log::error('Error retrieving published posts: ' . $e->getMessage());
             throw new Exception('Error retrieving published posts');
@@ -248,7 +276,11 @@ class PostController implements PostInterface
     public function restorePost(int $postId): bool
     {
         try {
-            return post::withTrashed()->findOrFail($postId)->restore();
+            $restored = post::withTrashed()->findOrFail($postId)->restore();
+            if ($restored) {
+                $this->logService->log(Auth::id(), 'restored_post', post::class, $postId, null);
+            }
+            return $restored;
         } catch (ModelNotFoundException $e) {
             return false;
         } catch (Exception $e) {
@@ -260,7 +292,11 @@ class PostController implements PostInterface
     public function forceDeletePost(int $postId): bool
     {
         try {
-            return post::withTrashed()->findOrFail($postId)->forceDelete();
+            $forceDeleted = post::withTrashed()->findOrFail($postId)->forceDelete();
+            if ($forceDeleted) {
+                $this->logService->log(Auth::id(), 'force_deleted_post', post::class, $postId, null);
+            }
+            return $forceDeleted;
         } catch (ModelNotFoundException $e) {
             return false;
         } catch (Exception $e) {
@@ -270,7 +306,7 @@ class PostController implements PostInterface
     }
 
 
-    private function applyFilters(Builder $query, Request $request): void
+    private function applyFilters(Builder $query, Request $req): void
     {
         $filters = [
             'search' => fn($value) => $query->where(function ($q) use ($value) {
@@ -288,17 +324,17 @@ class PostController implements PostInterface
         ];
 
         foreach ($filters as $key => $callback) {
-            $value = $request->input($key);
+            $value = $req->input($key);
             if ($value !== null) {
                 $callback($value);
             }
         }
     }
 
-    private function applySorting(Builder $query, Request $request): void
+    private function applySorting(Builder $query, Request $req): void
     {
-        $sortField = $request->input('sort_by', 'published_at');
-        $sortDirection = $request->input('sort_direction', 'desc');
+        $sortField = $req->input('sort_by', 'published_at');
+        $sortDirection = $req->input('sort_direction', 'desc');
 
         $allowedSortFields = ['published_at', 'views', 'likes', 'read_time'];
 

@@ -3,12 +3,21 @@
 namespace App\Repositories\SiteSettings;
 
 use App\Models\site_setting;
+use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class SiteSettingController implements SiteSettingInterface
 {
+
+    protected $logService;
+
+    public function __construct(AuditLogService $logService)
+    {
+        $this->logService = $logService;
+    }
 
     public function getAllSettings(): Collection
     {
@@ -37,7 +46,16 @@ class SiteSettingController implements SiteSettingInterface
             if (!$setting) {
                 return false;
             }
-            return $setting->update(['value' => $value]);
+            $oldValue = $setting->value;
+            $updated = $setting->update(['value' => $value]);
+            if ($updated) {
+                $this->logService->log(Auth::id(), 'updated_setting', site_setting::class, $setting->id, json_encode([
+                    'key' => $key,
+                    'old_value' => $oldValue,
+                    'new_value' => $value
+                ]));
+            }
+            return $updated;
         } catch (Exception $e) {
             Log::error('Error updating setting: ' . $e->getMessage());
             throw new Exception('Error updating setting');
@@ -47,7 +65,9 @@ class SiteSettingController implements SiteSettingInterface
     public function createSetting(array $data): site_setting
     {
         try {
-            return site_setting::create($data);
+            $setting = site_setting::create($data);
+            $this->logService->log(Auth::id(), 'created_setting', site_setting::class, $setting->id, json_encode($data));
+            return $setting;
         } catch (Exception $e) {
             Log::error('Error creating setting: ' . $e->getMessage());
             throw new Exception('Error creating setting');
@@ -61,7 +81,11 @@ class SiteSettingController implements SiteSettingInterface
             if (!$setting) {
                 return false;
             }
-            return $setting->delete();
+            $deleted = $setting->delete();
+            if ($deleted) {
+                $this->logService->log(Auth::id(), 'deleted_setting', site_setting::class, $setting->id, json_encode(['key' => $key]));
+            }
+            return $deleted;
         } catch (Exception $e) {
             Log::error('Error deleting setting: ' . $e->getMessage());
             throw new Exception('Error deleting setting');

@@ -12,6 +12,7 @@ interface CategoryInterface {
     public function createCategory(array $categoryDetails): categorie;
     public function updateCategory(int $id, array $newDetails): bool;
     public function getCategoryBySlug(string $slug): ? categorie;
+    
     public function deleteCategory(int $id): bool;
     public function restoreCategory(int $id): bool;
     public function forceDeleteCategory(int $id): bool;

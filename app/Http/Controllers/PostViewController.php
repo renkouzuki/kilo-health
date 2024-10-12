@@ -18,15 +18,15 @@ class PostViewController extends Controller
         $this->req = $req;
         $this->Repository = $repository;
     }
-    
+
     public function recordView(int $postId): JsonResponse
     {
         try {
             $userId = $this->req->user()->id;
             $this->Repository->recordView($postId, $userId);
-            return response()->json(['message' => 'View recorded successfully'], 201);
+            return response()->json(['success' => true, 'message' => 'View recorded successfully'], 201);
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to retrieve view record', 'err' => $e->getMessage()], 500);
         }
     }
 
@@ -34,9 +34,9 @@ class PostViewController extends Controller
     {
         try {
             $count = $this->Repository->getViewCount($postId);
-            return response()->json(['view_count' => $count]);
+            return response()->json(['success' => true, 'message' => 'Successfully get view count', 'view_count' => $count], 200);
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to get view count', 'err' => $e->getMessage()], 500);
         }
     }
 
@@ -44,9 +44,9 @@ class PostViewController extends Controller
     {
         try {
             $views = $this->Repository->getViewsByPost($postId);
-            return response()->json(['views' => $views]);
+            return response()->json(['success' => true, 'message' => 'Successfully get views', 'views' => $views], 200);
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to get views', 'err' => $e->getMessage()], 500);
         }
     }
 
@@ -54,9 +54,9 @@ class PostViewController extends Controller
     {
         try {
             $views = $this->Repository->getViewsByUser($userId);
-            return response()->json(['views' => $views]);
+            return response()->json(['success' => true, 'message' => 'Successfully get view by user', 'views' => $views], 200);
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to get view by user', 'err' => $e->getMessage()], 500);
         }
     }
 
@@ -65,9 +65,9 @@ class PostViewController extends Controller
         try {
             $userId = $this->req->user()->id;
             $hasViewed = $this->Repository->hasUserViewedPost($postId, $userId);
-            return response()->json(['has_viewed' => $hasViewed]);
+            return response()->json(['success' => true, 'message' => 'Successfully check if user has viewed post', 'has_viewed' => $hasViewed], 200);
         } catch (Exception $e) {
-            return response()->json(['message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Failed to check if user has viewed post', 'err' => $e->getMessage()], 500);
         }
     }
 }

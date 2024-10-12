@@ -4,6 +4,7 @@ namespace App\Repositories\PostViews;
 
 use App\Models\post;
 use App\Models\post_view;
+use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,14 @@ use Illuminate\Support\Facades\Log;
 
 class PostViewController implements PostViewInterface
 {
+
+    protected $logService;
+
+    public function __construct(AuditLogService $logService)
+    {
+        $this->logService = $logService;
+    }
+
     public function recordView(int $postId, int $userId): post_view
     {
         try {
@@ -24,6 +33,11 @@ class PostViewController implements PostViewInterface
 
                 if ($postView->wasRecentlyCreated) {
                     $post->increment('views');
+                    $this->logService->log($userId, 'recorded_post_view', post_view::class, $postView->id, json_encode([
+                        'post_id' => $postId,
+                        'user_id' => $userId,
+                        'viewed_at' => now(),
+                    ]));
                 }
 
                 $postView->viewed_at = now();

@@ -72,11 +72,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/categories/{category}/topics', [TopicController::class, 'getByCategory']);
     });
 
-    /////////////// jung kook routes
+    /////////////// jung kook routes and lay vila routes
     Route::prefix('post')->group(function () {
         Route::post('posts', [PostController::class, 'store']);
         Route::put('posts/{id}', [PostController::class, 'update']);
-        Route::delete('posts/{id}', [PostController::class, 'destroy']);
+        Route::delete('{id}', [PostController::class, 'destroy']);
+        Route::post('{id}/restore', [PostController::class, 'restore']);
+        Route::delete('{id}/force', [PostController::class, 'forceDelete']);
+        Route::get('trashed', [PostController::class, 'trashed']);
         Route::post('posts/{id}/publish', [PostController::class, 'publish']);
         Route::post('posts/{id}/unpublish', [PostController::class, 'unpublish']);
         Route::post('posts/{id}/like', [PostController::class, 'like']);

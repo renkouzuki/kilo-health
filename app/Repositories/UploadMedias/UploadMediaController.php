@@ -3,23 +3,40 @@
 namespace App\Repositories\UploadMedias;
 
 use App\Models\upload_media;
+use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class UploadMediaController implements UploadMediaInterface
 {
+    
+    protected $logService;
+
+    public function __construct(AuditLogService $logService)
+    {
+        $this->logService = $logService;
+    }
+
     public function uploadMedia(UploadedFile $file, int $postId): upload_media
     {
         try {
             $path = $file->store('post_media', 'public');
 
-            return upload_media::create([
+            $media = upload_media::create([
                 'url' => $path,
                 'post_id' => $postId
             ]);
+
+            $this->logService->log(Auth::id(), 'uploaded_media', upload_media::class, $media->id, json_encode([
+                'post_id' => $postId,
+                'url' => $path
+            ]));
+
+            return $media;
         } catch (Exception $e) {
             Log::error('Error uploading media: ' . $e->getMessage());
             throw new Exception('Error uploading media');
@@ -41,7 +58,16 @@ class UploadMediaController implements UploadMediaInterface
         try {
             $media = upload_media::findOrFail($mediaId);
             Storage::disk('public')->delete($media->url);
-            return $media->delete();
+            $deleted = $media->delete();
+
+            if ($deleted) {
+                $this->logService->log(Auth::id(), 'deleted_media', upload_media::class, $mediaId, json_encode([
+                    'url' => $media->url,
+                    'post_id' => $media->post_id
+                ]));
+            }
+
+            return $deleted;
         } catch (Exception $e) {
             Log::error('Error deleting media: ' . $e->getMessage());
             throw new Exception('Error deleting media');
