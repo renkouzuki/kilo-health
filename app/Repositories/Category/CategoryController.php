@@ -5,9 +5,8 @@ namespace App\Repositories\Category;
 use App\Models\categorie;
 use App\Services\AuditLogService;
 use Exception;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -21,10 +20,19 @@ class CategoryController implements CategoryInterface
         $this->logService = $logService;
     }
 
-    public function getAllCategories(): Collection
+    public function getAllCategories(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            return categorie::all();
+            return categorie::query()
+                ->when(
+                    $search ?? null,
+                    fn($query, $search) =>
+                    $query->where(
+                        fn($q) =>
+                        $q->where('name', 'LIKE', "%{$search}%")
+                    )
+                )
+                ->latest()->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error retrieving categories');
@@ -129,10 +137,17 @@ class CategoryController implements CategoryInterface
         }
     }
 
-    public function getTrashedCategories(int $perPage): LengthAwarePaginator
+    public function getTrashedCategories(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            return categorie::onlyTrashed()->paginate($perPage);
+            return categorie::onlyTrashed()->when(
+                $search ?? null,
+                fn($query, $search) =>
+                $query->where(
+                    fn($q) =>
+                    $q->where('name', 'LIKE', "%{$search}%")
+                )
+            )->latest()->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Error retrieving trashed categories: ' . $e->getMessage());
             throw new Exception('Error retrieving trashed categories');

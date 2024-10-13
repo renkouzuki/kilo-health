@@ -95,9 +95,47 @@ class TopicController extends Controller
     {
         try {
             $topics = $this->Repository->getTopicsByCategory($categoryId);
-            return response()->json(['success' => true , 'message' => 'Successfully retrieving topics' , 'data'=>TopicResource::collection($topics)],200);
+            return response()->json(['success' => true, 'message' => 'Successfully retrieving topics', 'data' => TopicResource::collection($topics)], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error retrieving topics', 'err' => $e->getMessage()], 500);
+        }
+    }
+
+    public function restore(int $id): JsonResponse
+    {
+        try {
+            $restored = $this->Repository->restoreTopic($id);
+            if (!$restored) {
+                return response()->json(['message' => 'Topic not found'], 404);
+            }
+            return response()->json(['success' => true, 'message' => 'Topic restored successfully'], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error trying to restore topic', 'err' => $e->getMessage()], 500);
+        }
+    }
+
+    public function forceDelete(int $id): JsonResponse
+    {
+        try {
+            $deleted = $this->Repository->forceDeleteTopic($id);
+            if (!$deleted) {
+                return response()->json(['message' => 'Topic not found'], 404);
+            }
+            return response()->json(['success' => true, 'message' => 'successfully permenantly deleted topic'], 204);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error permenatly deleted topic', 'err' => $e->getMessage()], 500);
+        }
+    }
+
+    public function trashed(): JsonResponse
+    {
+        $search = $this->req->search;
+        $perPage = $this->req->per_page ?? 10;
+        try {
+            $trashedCategories = $this->Repository->getTrashedTopics($search, $perPage);
+            return response()->json(['success' => true, 'message' => 'Successfully retrieving soft deleted topic', 'data' => $trashedCategories], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error retrieving soft deleted topic', 'err' => $e->getMessage()], 500);
         }
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Role extends Model
 {
-    use HasFactory;
+    use HasFactory , SoftDeletes;
 
     protected $fillable = ['name'];
 
@@ -31,8 +31,28 @@ class Role extends Model
     {
         switch ($role) {
             case self::SUPER_ADMIN:
-            case self::ADMIN:
                 return Permission::pluck('name')->toArray();
+            case self::ADMIN:
+                return [
+                    'view_items',
+                    'create_items',
+                    'edit_items',
+                    'update_items',
+                    'delete_items',
+                    'view_users',
+                    'create_users',
+                    'edit_users',
+                    'update_users',
+                    'delete_users',
+                ];
+            case self::ARTHUR:
+                return [
+                    'view_items',
+                    'create_items',
+                    'edit_items',
+                    'update_items',
+                    'delete_items',
+                ];
             case self::USER:
                 return ['view_items'];
             default:

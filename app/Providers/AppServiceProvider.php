@@ -4,10 +4,14 @@ namespace App\Providers;
 
 use App\Repositories\Category\CategoryController;
 use App\Repositories\Category\CategoryInterface;
+use App\Repositories\Permissions\PermissionController;
+use App\Repositories\Permissions\PermissionInterface;
 use App\Repositories\Posts\PostController;
 use App\Repositories\Posts\PostInterface;
 use App\Repositories\PostViews\PostViewController;
 use App\Repositories\PostViews\PostViewInterface;
+use App\Repositories\Roles\RoleController;
+use App\Repositories\Roles\RoleInterface;
 use App\Repositories\Topics\TopicController;
 use App\Repositories\Topics\TopicInterface;
 use App\Repositories\UploadMedias\UploadMediaController;
@@ -30,6 +34,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PostViewInterface::class, PostViewController::class);
         $this->app->bind(TopicInterface::class, TopicController::class);
         $this->app->bind(UploadMediaInterface::class, UploadMediaController::class);
+        $this->app->bind(RoleInterface::class , RoleController::class);
+        $this->app->bind(PermissionInterface::class , PermissionController::class);
 
         $this->app->singleton(AuditLogService::class, function ($app) {
             return new AuditLogService();

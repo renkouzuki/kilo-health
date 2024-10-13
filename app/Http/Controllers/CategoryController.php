@@ -23,8 +23,10 @@ class CategoryController extends Controller
 
     public function index(): JsonResponse
     {
+        $search = $this->req->search;
+        $perPage = $this->req->per_page ?? 10;
         try {
-            $categories = $this->Repository->getAllCategories();
+            $categories = $this->Repository->getAllCategories($search , $perPage);
             return response()->json(['success' => true, 'message' => 'Successfully retrieving categories', 'data' => CategoryResource::collection($categories)], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error retrieving categories', 'err' => $e->getMessage()], 500);
@@ -65,8 +67,8 @@ class CategoryController extends Controller
     {
         try {
             $validatedData = $this->req->validate([
-                'name' => 'required|max:255',
-                'icon' => 'required|max:500',
+                'name' => 'sometimes|string|max:255',
+                'icon' => 'sometimes|string|max:500',
             ]);
 
             $validatedData['slug'] = Str::slug($validatedData['name']);
@@ -75,8 +77,7 @@ class CategoryController extends Controller
             if (!$updated) {
                 return response()->json(['message' => 'Category not found'], 404);
             }
-            $category = $this->Repository->getCategoryById($id);
-            return response()->json(['success' => true, 'message' => 'Successfully updated category', 'data' => new CategoryResource($category)], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully updated category'], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error updating category', 'err' => $e->getMessage()], 500);
         }
@@ -136,8 +137,10 @@ class CategoryController extends Controller
 
     public function trashed(): JsonResponse
     {
+        $search = $this->req->search;
+        $perPage = $this->req->per_page ?? 10;
         try {
-            $trashedCategories = $this->Repository->getTrashedCategories($this->req->per_page ?? 10);
+            $trashedCategories = $this->Repository->getTrashedCategories($search , $perPage);
             return response()->json(['success' => true, 'message' => 'Successfully retrieving soft deleted categories', 'data' => CategoryResource::collection($trashedCategories)], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error retrieving soft deleted categories', 'err' => $e->getMessage()], 500);

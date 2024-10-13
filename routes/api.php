@@ -3,8 +3,10 @@
 use App\Events\testing;
 use App\Http\Controllers\Auth\authenticate;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PemrissionController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PostViewController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\UploadMediaController;
@@ -36,18 +38,36 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [UserManagement::class, 'ShowAll'])->middleware(['role:super_admin', 'permission:view_roles']);
         Route::get('/trashed', [UserManagement::class, 'ShowTrashUsers'])->middleware(['role:super_admin', 'permission:view_roles']);
         Route::get('/{user}', [UserManagement::class, 'GetUserDetails'])->middleware(['role:super_admin', 'permission:view_roles']);
-
-        /////////////////// todo fixes this it suppose to work like crud too and don't forget giving it own route -- assign to sopheak
-        Route::put('/roles/{role}', [UserManagement::class, 'UpdateRolePermissions'])->middleware(['role:super_admin', 'permission:edit_roles']);
-        Route::put('/{user}/role', [UserManagement::class, 'UpdateUserRole'])->middleware(['role:super_admin', 'permission:edit_roles']);
-        ///////////////////
-
         Route::delete('/{userId}/soft-delete', [UserManagement::class, 'SoftDeleteUser'])->middleware(['role:super_admin', 'permission:delete_roles']);
         Route::post('/{userId}/restore', [UserManagement::class, 'RestoreUser'])->middleware(['role:super_admin', 'permission:create_roles']);
         Route::delete('/{userId}/force-delete', [UserManagement::class, 'ForceDeleteUser'])->middleware(['role:super_admin', 'permission:delete_roles']);
 
         /////////////////// todo implement a rollback deletes function too -- assign to sopheak
         Route::get('/auditlog/{userId}', [UserManagement::class, 'getAuditLogs'])->middleware(['role:super_admin', 'permission:delete_roles']);
+    });
+
+    Route::prefix('roles')->group(function(){
+        Route::get('/', [RoleController::class, 'index']);
+        Route::get('/{id}', [RoleController::class, 'show']);
+        Route::post('/', [RoleController::class, 'store']);
+        Route::put('/{id}', [RoleController::class, 'update']);
+        Route::put('/{role}/permissions', [UserManagement::class, 'UpdateRolePermissions'])->middleware(['role:super_admin', 'permission:edit_roles']);
+        Route::put('/users/{user}/role', [UserManagement::class, 'UpdateUserRole'])->middleware(['role:super_admin', 'permission:edit_roles']);
+        Route::delete('/{id}', [RoleController::class, 'destroy']);
+        Route::post('/{id}/restore', [RoleController::class, 'restore']);
+        Route::delete('/{id}/force', [RoleController::class, 'forceDelete']);
+        Route::get('/trashed', [RoleController::class, 'displayTrashed']);
+    });
+    
+    Route::prefix('permissions')->group(function () {
+        Route::get('/', [PemrissionController::class, 'index']);
+        Route::get('/{id}', [PemrissionController::class, 'show']);
+        Route::post('/', [PemrissionController::class, 'store']);
+        Route::put('/{id}', [PemrissionController::class, 'update']);
+        Route::delete('/{id}', [PemrissionController::class, 'destroy']);
+        Route::post('/{id}/restore', [PemrissionController::class, 'restore']);
+        Route::delete('/{id}/force', [PemrissionController::class, 'forceDelete']);
+        Route::get('/trashed', [PemrissionController::class, 'displayTrashed']);
     });
 
     ////////////// heng visal routes
@@ -69,6 +89,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [TopicController::class, 'show']);
         Route::put('/{id}', [TopicController::class, 'update']);
         Route::delete('/{id}', [TopicController::class, 'destroy']);
+        Route::post('/{id}/restore', [TopicController::class, 'restore']);
+        Route::delete('/{id}/force', [TopicController::class, 'forceDelete']);
+        Route::get('/trashed', [TopicController::class, 'trashed']);
         Route::get('/categories/{category}/topics', [TopicController::class, 'getByCategory']);
     });
 
