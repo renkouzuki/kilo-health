@@ -29,7 +29,7 @@ class UserController implements UserInterface
     public function getUsers(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            return User::with(['role:id,name', 'role.permissions:id,name'])
+            return User::with(['role:id,name'])
                 ->when(
                     $search ?? null,
                     fn($query, $search) =>

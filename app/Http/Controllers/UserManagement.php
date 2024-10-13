@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\GetAuditLogsRequest;
+use App\Http\Resources\anotheruser;
 use App\Http\Resources\auditlogResource;
 use App\Http\Resources\softdeleteuserCollection;
 use App\Http\Resources\UserResource;
@@ -35,7 +36,7 @@ class UserManagement extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Users retrieved successfully',
-                'users' => UserResource::collection($users)
+                'users' => anotheruser::collection($users)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Failed to update role permissions', 'err' => $e->getMessage()], 500);
@@ -46,7 +47,7 @@ class UserManagement extends Controller
     public function GetUserDetails(User $user): JsonResponse
     {
         try {
-            $user = $this->Repository->getDetails($user);
+            $user = $this->Repository->getDetails($user,true);
             return response()->json([
                 'success' => true,
                 'message' => 'Users retrieved successfully',
@@ -157,7 +158,7 @@ class UserManagement extends Controller
         }
     }
 
-    public function getAuditLogs(GetAuditLogsRequest $req) : JsonResponse
+    public function getAuditLogs(GetAuditLogsRequest $req): JsonResponse
     {
         $userId = $req->user_id;
         $perPage = $this->req->per_page ?? 10;

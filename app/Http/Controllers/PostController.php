@@ -42,7 +42,6 @@ class PostController extends Controller
                 'title' => 'required|max:255',
                 'description' => 'required',
                 'category_id' => 'required|exists:categories,id',
-                'author_id' => 'required|exists:users,id',
                 'thumbnail' => 'required|url',
                 'content_type' => 'required|in:html,markdown',
             ]);
@@ -55,7 +54,7 @@ class PostController extends Controller
                 'description' => $formattedContent,
                 'content_type' => $validatedData['content_type'],
                 'category_id' => $validatedData['category_id'],
-                'author_id' => $validatedData['author_id'],
+                'author_id' => $this->req->user()->id,
                 'thumbnail' => $validatedData['thumbnail']
             ]);
             return response()->json(['success' => true, 'message' => 'Successfully created post', 'data' => new PostResource($post)], 201);
