@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\CategoryResource;
 use App\Repositories\Category\CategoryInterface;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -26,7 +27,7 @@ class CategoryController extends Controller
         $search = $this->req->search;
         $perPage = $this->req->per_page ?? 10;
         try {
-            $categories = $this->Repository->getAllCategories($search , $perPage);
+            $categories = $this->Repository->getAllCategories($search, $perPage);
             return response()->json(['success' => true, 'message' => 'Successfully retrieving categories', 'data' => CategoryResource::collection($categories)], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error retrieving categories', 'err' => $e->getMessage()], 500);
@@ -38,7 +39,7 @@ class CategoryController extends Controller
         try {
             $validatedData = $this->req->validate([
                 'name' => 'required|max:255',
-                'icon' => 'required|max:500',
+                'icon' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
             $validatedData['slug'] = Str::slug($validatedData['name']);
@@ -46,7 +47,7 @@ class CategoryController extends Controller
             $category = $this->Repository->createCategory($validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully store category', 'data' => new CategoryResource($category)], 201);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error creating category', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -54,12 +55,11 @@ class CategoryController extends Controller
     {
         try {
             $category = $this->Repository->getCategoryById($id);
-            if (!$category) {
-                return response()->json(['message' => 'Category not found'], 404);
-            }
             return response()->json(['success' => true, 'message' => 'Successfully retrieving category', 'data' => new CategoryResource($category)], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error retrieving category', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -68,18 +68,17 @@ class CategoryController extends Controller
         try {
             $validatedData = $this->req->validate([
                 'name' => 'sometimes|string|max:255',
-                'icon' => 'sometimes|string|max:500',
+                'icon' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
             $validatedData['slug'] = Str::slug($validatedData['name']);
 
-            $updated = $this->Repository->updateCategory($id, $validatedData);
-            if (!$updated) {
-                return response()->json(['message' => 'Category not found'], 404);
-            }
+            $this->Repository->updateCategory($id, $validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully updated category'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error updating category', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -87,51 +86,47 @@ class CategoryController extends Controller
     {
         try {
             $category = $this->Repository->getCategoryBySlug($slug);
-            if (!$category) {
-                return response()->json(['message' => 'Category not found'], 404);
-            }
             return response()->json(['success' => true, 'message' => 'successfully retrieved category', 'data' => new CategoryResource($category)], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error retrieving category', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     public function destroy(int $id)
     {
         try {
-            $deleted = $this->Repository->deleteCategory($id);
-            if (!$deleted) {
-                return response()->json(['message' => 'Category not found'], 404);
-            }
+            $this->Repository->deleteCategory($id);
             return response()->json(['success' => true, 'message' => 'Successfully deleted category'], 204);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error deleting category', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     public function restore(int $id): JsonResponse
     {
         try {
-            $restored = $this->Repository->restoreCategory($id);
-            if (!$restored) {
-                return response()->json(['message' => 'Category not found'], 404);
-            }
+            $this->Repository->restoreCategory($id);
             return response()->json(['success' => true, 'message' => 'Category restored successfully'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error trying to restore category', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     public function forceDelete(int $id): JsonResponse
     {
         try {
-            $deleted = $this->Repository->forceDeleteCategory($id);
-            if (!$deleted) {
-                return response()->json(['message' => 'Category not found'], 404);
-            }
+            $this->Repository->forceDeleteCategory($id);
             return response()->json(['success' => true, 'message' => 'successfully permenantly deleted category'], 204);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error permenatly deleted category', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -140,10 +135,10 @@ class CategoryController extends Controller
         $search = $this->req->search;
         $perPage = $this->req->per_page ?? 10;
         try {
-            $trashedCategories = $this->Repository->getTrashedCategories($search , $perPage);
+            $trashedCategories = $this->Repository->getTrashedCategories($search, $perPage);
             return response()->json(['success' => true, 'message' => 'Successfully retrieving soft deleted categories', 'data' => CategoryResource::collection($trashedCategories)], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error retrieving soft deleted categories', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

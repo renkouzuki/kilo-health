@@ -29,7 +29,7 @@ class UploadMediaController extends Controller
             $media = $this->Repository->uploadMedia($this->req->file('file'), $postId);
             return response()->json(['success' => true, 'message' => 'Successfully uploaded', 'media' => $media], 201);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to uploaded', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -39,7 +39,7 @@ class UploadMediaController extends Controller
             $media = $this->Repository->getMediaByPost($postId);
             return response()->json(['success' => true, 'message' => 'Successfully get media', 'media' => $media], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to get media', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -52,7 +52,7 @@ class UploadMediaController extends Controller
             }
             return response()->json(['success' => false, 'message' => 'Failed to delete media'], 400);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to delete media', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -65,7 +65,7 @@ class UploadMediaController extends Controller
             }
             return response()->json(['success' => false, 'message' => 'Media not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to get media', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

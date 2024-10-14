@@ -2,6 +2,9 @@
 
 namespace App\Repositories\Topics;
 
+use App\Events\Topics\TopicCreated;
+use App\Events\Topics\TopicDeleted;
+use App\Events\Topics\TopicUpdated;
 use App\Models\topic;
 use App\Services\AuditLogService;
 use Exception;
@@ -44,7 +47,7 @@ class TopicController implements TopicInterface
         try {
             return topic::findOrFail($id);
         } catch (ModelNotFoundException $e) {
-            return null;
+            return throw new Exception('Topic not found');
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error retrieving topic');
@@ -55,9 +58,13 @@ class TopicController implements TopicInterface
     {
         try {
             $topic = topic::findOrFail($id);
-            return $topic->delete();
+            $deleted = $topic->delete();
+            if($deleted){
+                event(new TopicDeleted($topic));
+            }
+            return $deleted;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Topic not found');
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error deleting topic');
@@ -67,7 +74,9 @@ class TopicController implements TopicInterface
     public function createTopic(array $topicDetails): topic
     {
         try {
-            return topic::create($topicDetails);
+            $topic = topic::create($topicDetails);
+            event(new TopicCreated($topic));
+            return $topic;
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error creating topic');
@@ -78,9 +87,13 @@ class TopicController implements TopicInterface
     {
         try {
             $topic = topic::findOrFail($id);
-            return $topic->update($newDetails);
+            $updated = $topic->update($newDetails);
+            if($updated){
+                event(new TopicUpdated($topic));
+            }
+            return $updated;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Topic not found');
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error updating topic');
@@ -105,6 +118,8 @@ class TopicController implements TopicInterface
                 $this->logService->log(Auth::id(), 'restored_topic', topic::class, $id, null);
             }
             return $restored;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Topic not found');
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error restoring topic');

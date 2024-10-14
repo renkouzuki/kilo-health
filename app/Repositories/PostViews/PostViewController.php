@@ -2,6 +2,7 @@
 
 namespace App\Repositories\PostViews;
 
+use App\Events\Posts\PostViewed;
 use App\Models\post;
 use App\Models\post_view;
 use App\Services\AuditLogService;
@@ -42,7 +43,7 @@ class PostViewController implements PostViewInterface
 
                 $postView->viewed_at = now();
                 $postView->save();
-
+                event(new PostViewed($post , $userId));
                 return $postView;
             });
         } catch (Exception $e) {

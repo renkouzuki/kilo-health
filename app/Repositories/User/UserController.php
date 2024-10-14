@@ -2,6 +2,12 @@
 
 namespace App\Repositories\User;
 
+use App\Events\UserMangement\RolePermissionsUpdated;
+use App\Events\UserMangement\UserForceDeleted;
+use App\Events\UserMangement\UserInfoUpdated;
+use App\Events\UserMangement\UserRestored;
+use App\Events\UserMangement\UserRoleUpdated;
+use App\Events\UserMangement\UserSoftDeleted;
 use App\Models\AuditLogs;
 use App\Models\Role;
 use App\Models\User;
@@ -67,6 +73,7 @@ class UserController implements UserInterface
 
             $this->logService->log(Auth::id(), 'updated_permissions', Role::class, $role->id, json_encode(['permissions' => $permissions]));
 
+            event(new RolePermissionsUpdated($role));
             return $role->load('permissions');
         } catch (Exception $e) {
             DB::rollBack();
@@ -86,6 +93,8 @@ class UserController implements UserInterface
 
             $this->logService->log(Auth::id(), 'updated_role', User::class, $user->id, json_encode(['role_id' => $roleId]));
 
+            event(new UserRoleUpdated($user));
+
             return $user->load('role');
         } catch (Exception $e) {
             DB::rollBack();
@@ -101,6 +110,8 @@ class UserController implements UserInterface
             $user->delete();
 
             $this->logService->log(Auth::id(), 'soft_deleted', User::class, $user->id);
+
+            event(new UserSoftDeleted($userId));
         } catch (ModelNotFoundException $e) {
             throw new Exception('User not found');
         } catch (Exception $e) {
@@ -126,6 +137,8 @@ class UserController implements UserInterface
             $user->restore();
 
             $this->logService->log(Auth::id(), 'restored', User::class, $user->id);
+
+            event(new UserRestored($user));
         } catch (ModelNotFoundException $e) {
             throw new Exception('User not found');
         } catch (Exception $e) {
@@ -141,6 +154,8 @@ class UserController implements UserInterface
             $user->forceDelete();
 
             $this->logService->log(Auth::id(), 'permanently_deleted', User::class, $user->id);
+
+            event(new UserForceDeleted($userId));
         } catch (ModelNotFoundException $e) {
             throw new Exception('User not found');
         } catch (Exception $e) {
@@ -170,6 +185,8 @@ class UserController implements UserInterface
             $data = array_filter($data);
 
             $user->update($data);
+
+            event(new UserInfoUpdated($user));
             return $user;
         } catch (ModelNotFoundException $e) {
             throw new Exception('User not found');

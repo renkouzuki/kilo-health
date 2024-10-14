@@ -2,6 +2,11 @@
 
 namespace App\Repositories\Permissions;
 
+use App\Events\Permission\PermissionCreated;
+use App\Events\Permission\PermissionDeleted;
+use App\Events\Permission\PermissionForceDeleted;
+use App\Events\Permission\PermissionRestored;
+use App\Events\Permission\PermissionUpdated;
 use App\Models\Permission;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -44,6 +49,7 @@ class PermissionController implements PermissionInterface
     {
         try {
             $permission = Permission::create($data);
+            event(new PermissionCreated($permission));
             return $permission;
         } catch (Exception $e) {
             Log::error('Error creating permission: ' . $e->getMessage());
@@ -56,9 +62,10 @@ class PermissionController implements PermissionInterface
         try {
             $permission = Permission::findOrFail($id);
             $updated = $permission->update($newDetails);
+            event(new PermissionUpdated($permission));
             return $updated;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Permission not found');
         } catch (Exception $e) {
             Log::error('Error updating permission: ' . $e->getMessage());
             throw new Exception('Error updating permission');
@@ -87,9 +94,10 @@ class PermissionController implements PermissionInterface
         try {
             $permission = Permission::findOrFail($id);
             $deleted = $permission->delete();
+            event(new PermissionDeleted($id));
             return $deleted;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Permission not found');
         } catch (Exception $e) {
             Log::error('Error deleting permission: ' . $e->getMessage());
             throw new Exception('Error deleting permission');
@@ -99,8 +107,12 @@ class PermissionController implements PermissionInterface
     public function restorePermission(int $id): bool
     {
         try {
-            $restored = Permission::withTrashed()->findOrFail($id)->restore();
+             $permission = Permission::withTrashed()->findOrFail($id);
+             $restored = $permission->restore();
+            event(new PermissionRestored($permission));
             return $restored;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Permission not found');
         } catch (Exception $e) {
             Log::error('Error restoring permission: ' . $e->getMessage());
             throw new Exception('Error restoring permission');
@@ -111,7 +123,10 @@ class PermissionController implements PermissionInterface
     {
         try {
             $forceDeleted = Permission::withTrashed()->findOrFail($id)->forceDelete();
+            event(new PermissionForceDeleted($id));
             return $forceDeleted;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Permission not found');
         } catch (Exception $e) {
             Log::error('Error force deleting permission: ' . $e->getMessage());
             throw new Exception('Error force deleting permission');

@@ -2,6 +2,11 @@
 
 namespace App\Repositories\Posts;
 
+use App\Events\Posts\PostCreated;
+use App\Events\Posts\PostDeleted;
+use App\Events\Posts\PostPublished;
+use App\Events\Posts\PostUnpublished;
+use App\Events\Posts\PostUpdated;
 use App\Models\post;
 use App\Services\AuditLogService;
 use Carbon\Carbon;
@@ -9,10 +14,12 @@ use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class PostController implements PostInterface
 {
@@ -54,7 +61,7 @@ class PostController implements PostInterface
         try {
             return post::with(['category', 'author'])->findOrFail($id);
         } catch (ModelNotFoundException $e) {
-            return null;
+            throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error retrieving post: ' . $e->getMessage());
             throw new Exception('Error retrieving post');
@@ -67,8 +74,14 @@ class PostController implements PostInterface
             return DB::transaction(function () use ($postData) {
                 $postData['read_time'] = $this->calculateReadTime($postData['description']);
 
+                if (isset($postData['thumbnail']) && $postData['thumbnail'] instanceof UploadedFile) {
+                    $thumbnailPath = $postData['thumbnail']->store('post-thumbnails', 's3');
+                    $postData['thumbnail'] = $thumbnailPath;
+                }
+
                 $post = post::create($postData);
                 $this->logService->log(Auth::id(), 'created_post', post::class, $post->id, json_encode($postData));
+                event(new PostCreated($post));
                 return $post;
             });
         } catch (Exception $e) {
@@ -87,14 +100,24 @@ class PostController implements PostInterface
                     $postData['read_time'] = $this->calculateReadTime($postData['description']);
                 }
 
+                if (isset($postData['thumbnail']) && $postData['thumbnail'] instanceof UploadedFile) {
+                    if ($post->thumbnail) {
+                        Storage::disk('s3')->delete($post->thumbnail);
+                    }
+
+                    $thumbnailPath = $postData['thumbnail']->store('post-thumbnails', 's3');
+                    $postData['thumbnail'] = $thumbnailPath;
+                }
+
                 $updated = $post->update($postData);
                 if ($updated) {
                     $this->logService->log(Auth::id(), 'updated_post', post::class, $id, json_encode($postData));
+                    event(new PostUpdated($post));
                 }
                 return $updated;
             });
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error updating post: ' . $e->getMessage());
             throw new Exception('Error updating post');
@@ -108,10 +131,11 @@ class PostController implements PostInterface
             $deleted = $post->delete();
             if ($deleted) {
                 $this->logService->log(Auth::id(), 'deleted_post', post::class, $id, null);
+                event(new PostDeleted($id));
             }
             return $deleted;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error deleting post: ' . $e->getMessage());
             throw new Exception('Error deleting post');
@@ -148,6 +172,8 @@ class PostController implements PostInterface
     {
         try {
             return post::where('id', $postId)->increment('views') > 0;
+        } catch(ModelNotFoundException $e){
+            throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error incrementing post views: ' . $e->getMessage());
             throw new Exception('Error incrementing post views');
@@ -168,7 +194,7 @@ class PostController implements PostInterface
 
             return false;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error adding like to post: ' . $e->getMessage());
             throw new Exception('Error adding like to post');
@@ -189,7 +215,7 @@ class PostController implements PostInterface
 
             return false;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error removing like from post: ' . $e->getMessage());
             throw new Exception('Error removing like from post');
@@ -215,10 +241,11 @@ class PostController implements PostInterface
             $published = $post->update(['published_at' => Carbon::now()]);
             if ($published) {
                 $this->logService->log(Auth::id(), 'published_post', post::class, $postId, json_encode(['published_at' => Carbon::now()]));
+                event(new PostPublished($post));
             }
             return $published;
         } catch (ModelNotFoundException $e) {
-            return false;
+            return throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error publishing post: ' . $e->getMessage());
             throw new Exception('Error publishing post');
@@ -232,10 +259,11 @@ class PostController implements PostInterface
             $unpublished = $post->update(['published_at' => null]);
             if ($unpublished) {
                 $this->logService->log(Auth::id(), 'unpublished_post', post::class, $postId, null);
+                event(new PostUnpublished($post));
             }
             return $unpublished;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error unpublishing post: ' . $e->getMessage());
             throw new Exception('Error unpublishing post');
@@ -282,7 +310,7 @@ class PostController implements PostInterface
             }
             return $restored;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error restoring post: ' . $e->getMessage());
             throw new Exception('Error restoring post');
@@ -298,7 +326,7 @@ class PostController implements PostInterface
             }
             return $forceDeleted;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error force deleting post: ' . $e->getMessage());
             throw new Exception('Error force deleting post');

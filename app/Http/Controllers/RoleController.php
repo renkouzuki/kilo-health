@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Repositories\Roles\RoleInterface;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -27,7 +28,7 @@ class RoleController extends Controller
             $roles = $this->Repository->getRoles($search, $perPage);
             return response()->json(['success' => true, 'message' => 'Successfully retrieving roles data',  'data' => $roles], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error retrieving roles', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -35,12 +36,11 @@ class RoleController extends Controller
     {
         try {
             $role = $this->Repository->getRoleById($id);
-            if (!$role) {
-                return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
-            }
             return response()->json(['success' => true, 'message' => 'Successfully retrieving role', 'data' => $role], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error retrieving role', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -53,7 +53,7 @@ class RoleController extends Controller
             $role = $this->Repository->createRole($validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully store role', 'data' => $role], 201);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error creating role', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -63,11 +63,10 @@ class RoleController extends Controller
             $validatedData = $this->req->validate([
                 'name' => 'sometimes|string|max:255'
             ]);
-            $updated = $this->Repository->updateRole($id, $validatedData);
-            if (!$updated) {
-                return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
-            }
+            $this->Repository->updateRole($id, $validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully updated role'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error updating role', 'err' => $e->getMessage()], 500);
         }
@@ -76,39 +75,36 @@ class RoleController extends Controller
     public function destroy(int $id)
     {
         try {
-            $deleted = $this->Repository->deleteRole($id);
-            if (!$deleted) {
-                return response()->json(['success' => false, 'message' => 'Role not found'], 404);
-            }
+            $this->Repository->deleteRole($id);
             return response()->json(['success' => true, 'message' => 'Successfully delete role'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error deleted role', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     public function restore(int $id): JsonResponse
     {
         try {
-            $restored = $this->Repository->restoreRole($id);
-            if (!$restored) {
-                return response()->json(['success' => false, 'message' => 'Role not found'], 404);
-            }
+            $this->Repository->restoreRole($id);
             return response()->json(['success' => true, 'message' => 'Successfully restore role data'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error to restore data from role', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     public function forceDelete(int $id): JsonResponse
     {
         try {
-            $deleted = $this->Repository->forceDeleteRole($id);
-            if (!$deleted) {
-                return response()->json(['success' => false, 'message' => 'Role not found'], 404);
-            }
+            $this->Repository->forceDeleteRole($id);
             return response()->json(['success' => true, 'message' => 'Successfully permenatly delete role data'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error trying to delete role permenantly', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -120,7 +116,7 @@ class RoleController extends Controller
             $trashedRoles = $this->Repository->getTrashedRoles($search, $perPage);
             return response()->json(['success' => true, 'message' => 'Successfuly retrieving soft delete roles', 'data' => $trashedRoles], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error trying to retrieving all the soft delete data from roles', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

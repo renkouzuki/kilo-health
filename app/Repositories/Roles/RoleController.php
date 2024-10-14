@@ -2,6 +2,11 @@
 
 namespace App\Repositories\Roles;
 
+use App\Events\Role\RoleCreated;
+use App\Events\Role\RoleDeleted;
+use App\Events\Role\RoleForceDeleted;
+use App\Events\Role\RoleRestored;
+use App\Events\Role\RoleUpdated;
 use App\Models\Role;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -46,6 +51,7 @@ class RoleController implements RoleInterface
     {
         try {
             $role = Role::create($data);
+            event(new RoleCreated($role));
             return $role;
         } catch (Exception $e) {
             Log::error('Error creating role: ' . $e->getMessage());
@@ -59,9 +65,10 @@ class RoleController implements RoleInterface
         try {
             $role = Role::findOrFail($id);
             $updated = $role->update($newsDetails);
+            event(new RoleUpdated($role));
             return $updated;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Role not found');
         } catch (Exception $e) {
             Log::error('Error updating role: ' . $e->getMessage());
             throw new Exception('Error updating role');
@@ -73,9 +80,10 @@ class RoleController implements RoleInterface
         try {
             $role = Role::findOrFail($id);
             $deleted = $role->delete();
+            event(new RoleDeleted($id));
             return $deleted;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Role not found');
         } catch (Exception $e) {
             Log::error('Error deleting role: ' . $e->getMessage());
             throw new Exception('Error deleting role');
@@ -85,8 +93,12 @@ class RoleController implements RoleInterface
     public function restoreRole(int $id): bool
     {
         try {
-            $restored = Role::withTrashed()->findOrFail($id)->restore();
+            $role = Role::withTrashed()->findOrFail($id);
+            $restored = $role->restore();
+            event(new RoleRestored($role));
             return $restored;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Role not found');
         } catch (Exception $e) {
             Log::error('Error restoring role: ' . $e->getMessage());
             throw new Exception('Error restoring role');
@@ -97,7 +109,10 @@ class RoleController implements RoleInterface
     {
         try {
             $forceDeleted = Role::withTrashed()->findOrFail($id)->forceDelete();
+            event(new RoleForceDeleted($id));
             return $forceDeleted;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Role not found');
         } catch (Exception $e) {
             Log::error('Error force deleting role: ' . $e->getMessage());
             throw new Exception('Error force deleting role');

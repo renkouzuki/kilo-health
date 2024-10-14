@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Repositories\SiteSettings\SiteSettingInterface;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -25,7 +26,7 @@ class SiteSettingController extends Controller
             $settings = $this->Repository->getAllSettings();
             return response()->json(['success' => true, 'message' => 'Successfully retrieving settings', 'data' => $settings], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to retrieving settings', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -37,8 +38,10 @@ class SiteSettingController extends Controller
                 return response()->json(['message' => 'Setting not found'], 404);
             }
             return response()->json(['success' => true, 'message' => 'Successfully retrieving setting', 'data' => $setting], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to retrieving setting', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -55,7 +58,7 @@ class SiteSettingController extends Controller
             }
             return response()->json(['success' => true, 'message' => 'Setting updated successfully'], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to updated setting', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -72,7 +75,7 @@ class SiteSettingController extends Controller
             $setting = $this->Repository->createSetting($validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully created setting', 'data' => $setting], 201);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to create setting', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -85,7 +88,7 @@ class SiteSettingController extends Controller
             }
             return response()->json(['success' => true, 'message' => 'Failed to delete setting'], 204);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to delete setting', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

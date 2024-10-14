@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\CustomValidation\CustomValue;
+use App\Events\UserMangement\UserLoggedIn;
+use App\Events\UserMangement\UserLoggedOut;
+use App\Events\UserMangement\UserRegistered;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -36,6 +39,7 @@ class Authentication extends Controller
             $expireDate = now()->addDays(7);
             $token = $user->createToken('my_token' , expiresAt:$expireDate)->plainTextToken;
 
+            event(new UserRegistered($user));
             return response()->json(['success' => true, 'message' => 'welcome new member ^w^', 'user' => $user, 'token' => $token], 201);
         } catch (ValidationException $e) {
             $customErrorMessage = 'Oops, looks like something went wrong with your submission.';
@@ -63,6 +67,7 @@ class Authentication extends Controller
             $expireDate = now()->addDays(7);
             $token = $user->createToken('my_token' , expiresAt:$expireDate)->plainTextToken;
 
+            event(new UserLoggedIn($user));
             return response()->json(['success' => true, 'message' => 'welcome back master :3', 'user' => $user, 'token' => $token], 200);
         } catch (ValidationException $e) {
             $customErrorMessage = 'oops look likes something wrong with your submission';
@@ -74,8 +79,10 @@ class Authentication extends Controller
     }
 
     public function logout(){
+        $user = $this->req->user();
+        $user->currentAccessToken()->delete();
 
-        $this->req->user()->currentAccessToken()->delete();
+        event(new UserLoggedOut($user));
         
         return response()->json(['message'=>'Logged out successfully!']);
     }

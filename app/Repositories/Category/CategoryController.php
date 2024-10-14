@@ -2,13 +2,18 @@
 
 namespace App\Repositories\Category;
 
+use App\Events\Categories\CategoryCreated;
+use App\Events\Categories\CategoryDeleted;
+use App\Events\Categories\CategoryUpdated;
 use App\Models\categorie;
 use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class CategoryController implements CategoryInterface
 {
@@ -44,7 +49,7 @@ class CategoryController implements CategoryInterface
         try {
             return categorie::findOrFail($id);
         } catch (ModelNotFoundException $e) {
-            return null;
+            throw new Exception('Category not found');
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error retrieving category');
@@ -54,8 +59,13 @@ class CategoryController implements CategoryInterface
     public function createCategory(array $categoryDetails): categorie
     {
         try {
+            if (isset($categoryDetails['icon']) && $categoryDetails['icon'] instanceof UploadedFile) {
+                $logoPath = $categoryDetails['icon']->store('categories', 's3');
+                $validatedData['icon'] = $logoPath;
+            }
             $category = categorie::create($categoryDetails);
             $this->logService->log(Auth::id(), 'created_category', categorie::class, $category->id, json_encode($categoryDetails));
+            event(new CategoryCreated($category));
             return $category;
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
@@ -67,13 +77,22 @@ class CategoryController implements CategoryInterface
     {
         try {
             $category = categorie::findOrFail($id);
+            if (isset($newDetails['icon']) && $newDetails['icon'] instanceof UploadedFile) {
+                if ($category->logo) {
+                    Storage::disk('icon')->delete($category->icon);
+                }
+
+                $logoPath = $newDetails['icon']->store('categories', 's3');
+                $newDetails['icon'] = $logoPath;
+            }
             $updated = $category->update($newDetails);
             if ($updated) {
                 $this->logService->log(Auth::id(), 'updated_category', categorie::class, $id, json_encode($newDetails));
+                event(new CategoryUpdated($category));
             }
             return $updated;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Category not found');
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error updating category');
@@ -85,7 +104,7 @@ class CategoryController implements CategoryInterface
         try {
             return categorie::where('slug', $slug)->firstOrFail();
         } catch (ModelNotFoundException $e) {
-            return null;
+            throw new Exception('Category not found');
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error retrieving category by slug');
@@ -99,10 +118,11 @@ class CategoryController implements CategoryInterface
             $deleted = $category->delete();
             if ($deleted) {
                 $this->logService->log(Auth::id(), 'deleted_category', categorie::class, $id, null);
+                event(new CategoryDeleted($id));
             }
             return $deleted;
         } catch (ModelNotFoundException $e) {
-            return false;
+            throw new Exception('Category not found');
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error deleting category');
@@ -117,6 +137,8 @@ class CategoryController implements CategoryInterface
                 $this->logService->log(Auth::id(), 'restored_category', categorie::class, $id, null);
             }
             return $restored;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Category not found');
         } catch (Exception $e) {
             Log::error('Error restoring category: ' . $e->getMessage());
             throw new Exception('Error restoring category');
@@ -131,6 +153,8 @@ class CategoryController implements CategoryInterface
                 $this->logService->log(Auth::id(), 'force_deleted_category', categorie::class, $id, null);
             }
             return $forceDeleted;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Category not found');
         } catch (Exception $e) {
             Log::error('Error force deleting category: ' . $e->getMessage());
             throw new Exception('Error force deleting category');

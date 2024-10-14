@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Repositories\Permissions\PermissionInterface;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -27,7 +28,7 @@ class PemrissionController extends Controller
             $permissions = $this->Repository->getPermissions($search, $perPage);
             return response()->json(['success' => true, 'message' => 'Successfully retrieving permissions', 'data' => $permissions], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error retrieving permissions', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -35,12 +36,11 @@ class PemrissionController extends Controller
     {
         try {
             $permission = $this->Repository->getPermissionsId($id);
-            if (!$permission) {
-                return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
-            }
             return response()->json(['success' => true, 'message' => 'Successfully retrieving permission', 'data' => $permission], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error retrieving permission', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -53,7 +53,7 @@ class PemrissionController extends Controller
             $permission = $this->Repository->createPermission($validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully store permission', 'data' => $permission], 201);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error creating permission', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -63,24 +63,22 @@ class PemrissionController extends Controller
             $validatedData = $this->req->validate([
                 'name' => 'sometimes|string|max:255'
             ]);
-            $updated = $this->Repository->updatePermission($id, $validatedData);
-            if (!$updated) {
-                return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
-            }
+            $this->Repository->updatePermission($id, $validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully updated permission'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error updating permission', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     public function destroy(int $id)
     {
         try {
-            $deleted = $this->Repository->deletePermission($id);
-            if (!$deleted) {
-                return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
-            }
+            $this->Repository->deletePermission($id);
             return response()->json(['success' => true, 'message' => 'Successfully delete permission'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error deleted permission', 'err' => $e->getMessage()], 500);
         }
@@ -89,26 +87,24 @@ class PemrissionController extends Controller
     public function restore(int $id): JsonResponse
     {
         try {
-            $restored = $this->Repository->restorePermission($id);
-            if (!$restored) {
-                return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
-            }
+            $this->Repository->restorePermission($id);
             return response()->json(['success' => true, 'message' => 'Successfully restore permission data'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error to restore data from permission', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     public function forceDelete(int $id): JsonResponse
     {
         try {
-            $deleted = $this->Repository->forceDeletePermission($id);
-            if (!$deleted) {
-                return response()->json(['success' => false, 'message' => 'Permission not found'], 404);
-            }
+            $this->Repository->forceDeletePermission($id);
             return response()->json(['success' => true, 'message' => 'Successfully permenatly delete permission data'], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error trying to delete permission permenantly', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -120,7 +116,7 @@ class PemrissionController extends Controller
             $trashedPermissions = $this->Repository->getTrashedPermissions($search, $perPage);
             return response()->json(['success' => true, 'message' => 'Successfuly retrieving soft delete permission data', 'data' => $trashedPermissions], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error trying to retrieving all the soft delete data from permission', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }

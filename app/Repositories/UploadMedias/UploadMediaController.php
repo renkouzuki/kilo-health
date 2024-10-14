@@ -2,6 +2,8 @@
 
 namespace App\Repositories\UploadMedias;
 
+use App\Events\Posts\MediaDeleted;
+use App\Events\Posts\MediaUploaded;
 use App\Models\upload_media;
 use App\Services\AuditLogService;
 use Exception;
@@ -35,7 +37,7 @@ class UploadMediaController implements UploadMediaInterface
                 'post_id' => $postId,
                 'url' => $path
             ]));
-
+            event(new MediaUploaded($media));
             return $media;
         } catch (Exception $e) {
             Log::error('Error uploading media: ' . $e->getMessage());
@@ -65,6 +67,7 @@ class UploadMediaController implements UploadMediaInterface
                     'url' => $media->url,
                     'post_id' => $media->post_id
                 ]));
+                event(new MediaDeleted($mediaId, $media->post_id));
             }
 
             return $deleted;

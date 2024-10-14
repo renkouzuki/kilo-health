@@ -26,7 +26,7 @@ class PostViewController extends Controller
             $this->Repository->recordView($postId, $userId);
             return response()->json(['success' => true, 'message' => 'View recorded successfully'], 201);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to retrieve view record', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -46,7 +46,7 @@ class PostViewController extends Controller
             $views = $this->Repository->getViewsByPost($postId);
             return response()->json(['success' => true, 'message' => 'Successfully get views', 'views' => $views], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to get views', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -56,7 +56,7 @@ class PostViewController extends Controller
             $views = $this->Repository->getViewsByUser($userId);
             return response()->json(['success' => true, 'message' => 'Successfully get view by user', 'views' => $views], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to get view by user', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -67,7 +67,7 @@ class PostViewController extends Controller
             $hasViewed = $this->Repository->hasUserViewedPost($postId, $userId);
             return response()->json(['success' => true, 'message' => 'Successfully check if user has viewed post', 'has_viewed' => $hasViewed], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to check if user has viewed post', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }
