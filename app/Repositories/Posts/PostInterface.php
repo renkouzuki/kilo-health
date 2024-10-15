@@ -21,8 +21,8 @@ interface PostInterface
     public function getLikesCount(int $postId): int;
     public function publishPost(int $postId): bool;
     public function unpublishPost(int $postId): bool;
-    public function getPublishedPosts(Request $req): LengthAwarePaginator;
-    public function getTrashedPosts(int $perPage): LengthAwarePaginator;
+    public function getPublishedPosts(Request $req , int $perPage): LengthAwarePaginator;
+    public function getTrashedPosts(Request $req , int $perPage): LengthAwarePaginator;
     public function restorePost(int $postId): bool;
     public function forceDeletePost(int $postId): bool;
 }

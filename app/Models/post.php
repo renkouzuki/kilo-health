@@ -22,6 +22,10 @@ class post extends Model
         return $this->belongsTo(categorie::class);
     }
 
+    public function author(){
+        return $this->belongsTo(User::class, 'author_id');
+    }
+
     public function views()
     {
         return $this->hasMany(post_view::class);
@@ -31,4 +35,10 @@ class post extends Model
     {
         return $this->hasMany(upload_media::class);
     }
+
+    public function likes()
+    {
+        return $this->belongsToMany(User::class, 'post_likes')->withTimestamps();
+    }
+
 }

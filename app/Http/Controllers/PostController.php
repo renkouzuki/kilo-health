@@ -29,7 +29,7 @@ class PostController extends Controller
     public function index(): JsonResponse
     {
         try {
-            $posts = $this->Repository->getAllPosts($this->req, 10);
+            $posts = $this->Repository->getAllPosts($this->req, $this->req->per_page ?? 10);
             return response()->json(['success' => true, 'message' => 'Successfully retrieved posts', 'data' => PostResource::collection($posts)], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -137,7 +137,7 @@ class PostController extends Controller
     public function getPublished(): JsonResponse
     {
         try {
-            $posts = $this->Repository->getPublishedPosts($this->req);
+            $posts = $this->Repository->getPublishedPosts($this->req, $this->req->per_page ?? 10);
             return response()->json(['success' => true, 'message' => 'Successfully retrieving published posts', 'data' => PostResource::collection($posts)], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -219,10 +219,10 @@ class PostController extends Controller
         }
     }
 
-    public function trashed(Request $request): JsonResponse
+    public function trashed(): JsonResponse
     {
         try {
-            $trashedPosts = $this->Repository->getTrashedPosts($request->input('per_page', 15));
+            $trashedPosts = $this->Repository->getTrashedPosts($this->req, $this->req->per_page ?? 10);
             return response()->json(['success' => true, 'message' => 'Successfully retrieving trashed posts', 'data' => PostResource::collection($trashedPosts)], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

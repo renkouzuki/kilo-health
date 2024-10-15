@@ -49,7 +49,7 @@ class PostController implements PostInterface
                 })
                 ->orderBy('created_at', 'desc');
 
-            return $query->paginate($perPage);
+            return $query->latest()->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Error retrieving posts: ' . $e->getMessage());
             throw new Exception('Error retrieving posts');
@@ -59,7 +59,7 @@ class PostController implements PostInterface
     public function getPostById(int $id): ?Post
     {
         try {
-            return post::with(['category', 'author'])->findOrFail($id);
+            return post::with(['category', 'author','uploadMedia'])->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             throw new Exception('Post not found');
         } catch (Exception $e) {
@@ -172,7 +172,7 @@ class PostController implements PostInterface
     {
         try {
             return post::where('id', $postId)->increment('views') > 0;
-        } catch(ModelNotFoundException $e){
+        } catch (ModelNotFoundException $e) {
             throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error incrementing post views: ' . $e->getMessage());
@@ -184,10 +184,20 @@ class PostController implements PostInterface
     {
         try {
             $post = post::findOrFail($postId);
-            $like = $post->likes()->where('user_id', $userId)->first();
 
-            if (!$like) {
-                $post->likes()->create(['user_id' => $userId]);
+            $liked = DB::table('post_likes')
+                ->where('post_id', $postId)
+                ->where('user_id', $userId)
+                ->exists();
+
+            if (!$liked) {
+                DB::table('post_likes')->insert([
+                    'post_id' => $postId,
+                    'user_id' => $userId,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
                 $post->increment('likes');
                 return true;
             }
@@ -205,10 +215,13 @@ class PostController implements PostInterface
     {
         try {
             $post = post::findOrFail($postId);
-            $like = $post->likes()->where('user_id', $userId)->first();
 
-            if ($like) {
-                $like->delete();
+            $deleted = DB::table('post_likes')
+                ->where('post_id', $postId)
+                ->where('user_id', $userId)
+                ->delete();
+
+            if ($deleted) {
                 $post->decrement('likes');
                 return true;
             }
@@ -270,7 +283,7 @@ class PostController implements PostInterface
         }
     }
 
-    public function getPublishedPosts(Request $req): LengthAwarePaginator
+    public function getPublishedPosts(Request $req , int $perPage): LengthAwarePaginator
     {
         try {
             $query = post::query()
@@ -281,14 +294,14 @@ class PostController implements PostInterface
             $this->applyFilters($query, $req);
             $this->applySorting($query, $req);
 
-            return $query->paginate($req->per_page ?? 10);
+            return $query->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Error retrieving published posts: ' . $e->getMessage());
             throw new Exception('Error retrieving published posts');
         }
     }
 
-    public function getTrashedPosts(int $perPage): LengthAwarePaginator
+    public function getTrashedPosts(Request $req , int $perPage): LengthAwarePaginator
     {
         try {
             return post::onlyTrashed()
