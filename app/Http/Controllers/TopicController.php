@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\TopicResource;
+use App\pagination\paginating;
 use App\Repositories\Topics\TopicInterface;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -15,18 +16,25 @@ class TopicController extends Controller
     private Request $req;
 
     protected $Repository;
+    protected $pagination;
 
     public function __construct(TopicInterface $repository, Request $req)
     {
         $this->req = $req;
         $this->Repository = $repository;
+        $this->pagination = new paginating();
     }
 
     public function index(): JsonResponse
     {
         try {
             $topics = $this->Repository->getAllTopics();
-            return response()->json(['success' => true, 'message' => 'successfully retrieving topics data', 'data' => TopicResource::collection($topics)], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'successfully retrieving topics data', 
+                'data' => TopicResource::collection($topics),
+                'metadata' => $this->pagination->metadata($topics)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -63,8 +71,8 @@ class TopicController extends Controller
     {
         try {
             $validatedData = $this->req->validate([
-                'name' => 'required|max:255',
-                'category_id' => 'required|exists:categories,id',
+                'name' => 'sometimes|max:255',
+                'category_id' => 'sometimes|exists:categories,id',
             ]);
 
             $this->Repository->updateTopic($id, $validatedData);
@@ -130,7 +138,12 @@ class TopicController extends Controller
         $perPage = $this->req->per_page ?? 10;
         try {
             $trashedCategories = $this->Repository->getTrashedTopics($search, $perPage);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving soft deleted topic', 'data' => $trashedCategories], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully retrieving soft deleted topic', 
+                'data' => TopicResource::collection($trashedCategories),
+                'metadata'=>$this->pagination->metadata($trashedCategories)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

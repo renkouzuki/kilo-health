@@ -18,9 +18,7 @@ class TopicResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'category_id' => $this->category_id,
-            'category' => new CategoryResource($this->whenLoaded('category')),
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'category' => new CategoryResource($this->whenLoaded('category'))
         ];
     }
 }

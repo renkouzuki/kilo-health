@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\CategoryResource;
+use App\pagination\paginating;
 use App\Repositories\Category\CategoryInterface;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -15,11 +16,13 @@ class CategoryController extends Controller
     private Request $req;
 
     protected $Repository;
+    protected $pagination;
 
     public function __construct(CategoryInterface $repository, Request $req)
     {
         $this->req = $req;
         $this->Repository = $repository;
+        $this->pagination = new paginating();
     }
 
     public function index(): JsonResponse
@@ -28,7 +31,12 @@ class CategoryController extends Controller
         $perPage = $this->req->per_page ?? 10;
         try {
             $categories = $this->Repository->getAllCategories($search, $perPage);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving categories', 'data' => CategoryResource::collection($categories)], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully retrieving categories',
+                'data' => CategoryResource::collection($categories),
+                'metadata'=> $this->pagination->metadata($categories)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error retrieving categories', 'err' => $e->getMessage()], 500);
         }
@@ -136,7 +144,12 @@ class CategoryController extends Controller
         $perPage = $this->req->per_page ?? 10;
         try {
             $trashedCategories = $this->Repository->getTrashedCategories($search, $perPage);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving soft deleted categories', 'data' => CategoryResource::collection($trashedCategories)], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully retrieving soft deleted categories', 
+                'data' => CategoryResource::collection($trashedCategories),
+                'metadata'=>$this->pagination->metadata($trashedCategories)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

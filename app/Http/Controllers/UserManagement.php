@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\GetAuditLogsRequest;
 use App\Http\Resources\anotheruser;
-use App\Http\Resources\auditlogResource;
-use App\Http\Resources\softdeleteuserCollection;
+use App\Http\Resources\auditlog;
 use App\Http\Resources\UserResource;
 use App\Models\Role;
 use App\Models\User;
+use App\pagination\paginating;
 use App\Repositories\User\UserInterface;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -20,11 +20,13 @@ class UserManagement extends Controller
     private Request $req;
 
     protected $Repository;
+    protected $pagination;
 
     public function __construct(UserInterface $repository, Request $req)
     {
         $this->req = $req;
         $this->Repository = $repository;
+        $this->pagination = new paginating();
     }
 
     public function ShowAll(): JsonResponse
@@ -36,7 +38,8 @@ class UserManagement extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Users retrieved successfully',
-                'users' => anotheruser::collection($users)
+                'data' => anotheruser::collection($users),
+                'metadata' => $this->pagination->metadata($users)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -113,10 +116,16 @@ class UserManagement extends Controller
 
     public function ShowTrashUsers(): JsonResponse
     {
+        $search = $this->req->search;
         $perPage = $this->req->per_page ?? 10;
         try {
-            $data = $this->Repository->getTrash($perPage);
-            return response()->json(['success' => false, 'data' => new softdeleteuserCollection($data), 'message' => 'Soft deleted users retrieved successfully'], 200);
+            $data = $this->Repository->getTrash($search , $perPage);
+            return response()->json([
+                'success' => true,
+                'message' => 'Soft deleted users retrieved successfully',
+                'data' => anotheruser::collection($data),
+                'metadata'=> $this->pagination->metadata($data)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -164,16 +173,16 @@ class UserManagement extends Controller
         }
     }
 
-    public function getAuditLogs(GetAuditLogsRequest $req): JsonResponse
+    public function getAuditLog(int $userId): JsonResponse
     {
-        $userId = $req->user_id;
         $perPage = $this->req->per_page ?? 10;
         try {
             $users = $this->Repository->getAuditLogs($userId, $perPage);
             return response()->json([
                 'success' => true,
                 'message' => 'Auditlog retrieved successfully',
-                'users' => auditlogResource::collection($users)
+                'data' => auditlog::collection($users),
+                'metadata' => $this->pagination->metadata($users)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

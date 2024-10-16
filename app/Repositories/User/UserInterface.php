@@ -13,7 +13,7 @@ interface UserInterface {
     public function updateRole(User $user , int $roleId):User;
     public function getDetails(User $user):User;
     public function softDelete(int $userId): void;
-    public function getTrash(int $perPage): LengthAwarePaginator;
+    public function getTrash(string $search = null , int $perPage = 10): LengthAwarePaginator;
     public function restore(int $userId): void;
     public function forceDelete(int $userId): void;
     public function editUserInfo(Request $req):User;

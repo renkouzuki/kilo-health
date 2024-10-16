@@ -44,8 +44,7 @@ class UserController implements UserInterface
                         $q->where('name', 'LIKE', "%{$search}%")
                             ->orWhere('email', 'LIKE', "%{$search}%")
                     )
-                )
-                ->paginate($perPage);
+                )->latest()->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Error retrieving users: ' . $e->getMessage());
             throw new Exception('Error retrieving users');
@@ -120,10 +119,19 @@ class UserController implements UserInterface
         }
     }
 
-    public function getTrash(int $perPage): LengthAwarePaginator
+    public function getTrash(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            return User::onlyTrashed()->paginate($perPage);
+            return User::onlyTrashed()
+                ->when(
+                    $search ?? null,
+                    fn($query, $search) =>
+                    $query->where(
+                        fn($q) =>
+                        $q->where('name', 'LIKE', "%{$search}%")
+                            ->orWhere('email', 'LIKE', "%{$search}%")
+                    )
+                )->latest()->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Error retrieving trashed users: ' . $e->getMessage());
             throw new Exception('Error retrieving trashed users');

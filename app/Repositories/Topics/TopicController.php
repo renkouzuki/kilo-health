@@ -26,7 +26,7 @@ class TopicController implements TopicInterface
     public function getAllTopics(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            return topic::query()
+            return topic::with(['category'])
                 ->when(
                     $search ?? null,
                     fn($query, $search) =>

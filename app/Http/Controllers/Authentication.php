@@ -8,6 +8,7 @@ use App\Events\UserMangement\UserLoggedOut;
 use App\Events\UserMangement\UserRegistered;
 use App\Models\User;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -37,13 +38,13 @@ class Authentication extends Controller
             ]);
 
             $expireDate = now()->addDays(7);
-            $token = $user->createToken('my_token' , expiresAt:$expireDate)->plainTextToken;
+            $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
 
             event(new UserRegistered($user));
             return response()->json(['success' => true, 'message' => 'welcome new member ^w^', 'user' => $user, 'token' => $token], 201);
         } catch (ValidationException $e) {
             $customErrorMessage = 'Oops, looks like something went wrong with your submission.';
-            return response(['success' => false, 'message' => $customErrorMessage , 'issues' => $e->errors()], 422);
+            return response(['success' => false, 'message' => $customErrorMessage, 'issues' => $e->errors()], 422);
         } catch (Exception $e) {
             Log::error("error: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -56,7 +57,7 @@ class Authentication extends Controller
             $validated = Validator::make($this->req->all(), [
                 'email' => 'required|email',
                 'password' => 'required',
-            ],CustomValue::LoginMsg())->validate();
+            ], CustomValue::LoginMsg())->validate();
 
             $user = User::where('email', $validated['email'])->first();
 
@@ -65,7 +66,7 @@ class Authentication extends Controller
             }
 
             $expireDate = now()->addDays(7);
-            $token = $user->createToken('my_token' , expiresAt:$expireDate)->plainTextToken;
+            $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
 
             event(new UserLoggedIn($user));
             return response()->json(['success' => true, 'message' => 'welcome back master :3', 'user' => $user, 'token' => $token], 200);
@@ -78,12 +79,29 @@ class Authentication extends Controller
         }
     }
 
-    public function logout(){
+    public function logout()
+    {
         $user = $this->req->user();
         $user->currentAccessToken()->delete();
 
         event(new UserLoggedOut($user));
-        
-        return response()->json(['message'=>'Logged out successfully!']);
+
+        return response()->json(['message' => 'Logged out successfully!']);
+    }
+
+    public function getUserDetails()
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'message' => 'Users retrieved successfully',
+                'data' => $this->req->user()
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            Log::error('User not found: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'User not found'], 404);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }

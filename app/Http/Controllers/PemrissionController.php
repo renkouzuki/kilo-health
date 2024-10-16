@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\permissions;
+use App\pagination\paginating;
 use App\Repositories\Permissions\PermissionInterface;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -13,11 +15,13 @@ class PemrissionController extends Controller
     private Request $req;
 
     protected $Repository;
+    protected $pagination;
 
     public function __construct(PermissionInterface $repository, Request $req)
     {
         $this->req = $req;
         $this->Repository = $repository;
+        $this->pagination = new paginating();
     }
 
     public function index(): JsonResponse
@@ -26,7 +30,12 @@ class PemrissionController extends Controller
         $perPage = $this->req->per_page ?? 10;
         try {
             $permissions = $this->Repository->getPermissions($search, $perPage);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving permissions', 'data' => $permissions], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully retrieving permissions', 
+                'data' => permissions::collection($permissions),
+                'metadata'=>$this->pagination->metadata($permissions)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -114,7 +123,12 @@ class PemrissionController extends Controller
         $perPage = $this->req->per_page ?? 10;
         try {
             $trashedPermissions = $this->Repository->getTrashedPermissions($search, $perPage);
-            return response()->json(['success' => true, 'message' => 'Successfuly retrieving soft delete permission data', 'data' => $trashedPermissions], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfuly retrieving soft delete permission data', 
+                'data' => permissions::collection($trashedPermissions),
+                'metadata'=> $this->pagination->metadata($trashedPermissions)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

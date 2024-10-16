@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\roles;
+use App\pagination\paginating;
 use App\Repositories\Roles\RoleInterface;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -13,11 +15,13 @@ class RoleController extends Controller
     private Request $req;
 
     protected $Repository;
+    protected $pagination;
 
     public function __construct(RoleInterface $repository, Request $req)
     {
         $this->req = $req;
         $this->Repository = $repository;
+        $this->pagination = new paginating();
     }
 
     public function index(): JsonResponse
@@ -26,7 +30,12 @@ class RoleController extends Controller
         $perPage = $this->req->per_page ?? 10;
         try {
             $roles = $this->Repository->getRoles($search, $perPage);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving roles data',  'data' => $roles], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully retrieving roles data',
+                'data' => roles::collection($roles),
+                'metadata' => $this->pagination->metadata($roles)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -114,7 +123,12 @@ class RoleController extends Controller
         $perPage = $this->req->per_page ?? 10;
         try {
             $trashedRoles = $this->Repository->getTrashedRoles($search, $perPage);
-            return response()->json(['success' => true, 'message' => 'Successfuly retrieving soft delete roles', 'data' => $trashedRoles], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfuly retrieving soft delete roles', 
+                'data' => roles::collection($trashedRoles),
+                'metadata'=> $this->pagination->metadata($trashedRoles)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
