@@ -38,7 +38,7 @@ class post extends Model
 
     public function likes()
     {
-        return $this->belongsToMany(User::class, 'post_likes')->withTimestamps();
+        return $this->belongsToMany(User::class, 'post_likes');// this shit doesnt need ->withTimestamp() to work;
     }
 
 }

@@ -2,3 +2,5 @@
 - register and login verification system
 
 3-audit log must have a db rollback delete 
+
+4- fix get publish post filter and getTrashPost too
