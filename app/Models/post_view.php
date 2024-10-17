@@ -9,6 +9,8 @@ class post_view extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = ['post_id', 'user_id', 'viewed_at'];
     protected $dates = ['viewed_at'];
 

@@ -100,8 +100,16 @@ class TopicController extends Controller
     public function getByCategory(int $categoryId): AnonymousResourceCollection|JsonResponse
     {
         try {
-            $topics = $this->Repository->getTopicsByCategory($categoryId);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving topics', 'data' => TopicResource::collection($topics)], 200);
+            $search = $this->req->search;
+            $perPage = $this->req->per_page ?? 1;
+
+            $topics = $this->Repository->getTopicsByCategory($search , $perPage ,$categoryId);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully retrieving topics', 
+                'data' => TopicResource::collection($topics),
+                'metadata' => $this->pagination->metadata($topics)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

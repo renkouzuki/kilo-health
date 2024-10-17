@@ -18,14 +18,17 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [authenticate::class, 'register']);
 Route::post('/login', [authenticate::class, 'login']);
 
-Route::get('posts', [PostController::class, 'getPublished']);
-Route::get('posts/{id}', [PostController::class, 'show']);
-Route::post('posts/{id}/increment-views', [PostController::class, 'incrementViews']);
-
 Route::middleware('auth:sanctum')->group(function () {
+    ///// public routes
     Route::put('/update_user', [UserManagement::class, 'UpdateUserInfo']);
     Route::get('/profile',[UserManagement::class , 'getUserDetails']);
     Route::post('/logout', [authenticate::class, 'logout']);
+    Route::get('posts', [PostController::class, 'getPublished']);
+    Route::get('posts/{id}', [PostController::class, 'publicShow']);
+    Route::post('posts/{postId}/view', [PostViewController::class, 'recordView'])->middleware('permission:view_items');
+    Route::post('/{id}/like', [PostController::class, 'like'])->middleware('permission:view_items');
+    Route::delete('/{id}/like', [PostController::class, 'unlike'])->middleware('permission:view_items');
+
 
     Route::get('/testView', function () {
         $test = new SwitchMe();
@@ -98,23 +101,22 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /////////////// jung kook routes and lay vila routes
     Route::prefix('post')->group(function () {
+        Route::get('trashed', [PostController::class, 'trashed'])->middleware(['role:super_admin|admin', 'permission:view_delete_items']);
         Route::get('/', [PostController::class, 'index'])->middleware(['role:super_admin|admin', 'permission:view_items']);
         Route::post('/', [PostController::class, 'store'])->middleware(['role:super_admin|admin|arthur', 'permission:create_items']);
         Route::get('{id}', [PostController::class, 'show'])->middleware('permission:view_items');
-        Route::put('{id}', [PostController::class, 'update'])->middleware(['role:super_admin|admin|arthur', 'permission:update_items']);
+        Route::put('/{id}', [PostController::class, 'update'])->middleware(['role:super_admin|admin|arthur', 'permission:update_items']);
         Route::delete('{id}', [PostController::class, 'destroy'])->middleware(['role:super_admin|admin', 'permission:delete_items']);
         Route::post('{id}/restore', [PostController::class, 'restore'])->middleware(['role:super_admin|admin', 'permission:restore_items']);
         Route::delete('{id}/force', [PostController::class, 'forceDelete'])->middleware(['role:super_admin', 'permission:force_delete_items']);
-        Route::get('trashed', [PostController::class, 'trashed'])->middleware(['role:super_admin|admin', 'permission:view_delete_items']);
         Route::post('{id}/publish', [PostController::class, 'publish'])->middleware(['role:super_admin|admin|arthur', 'permission:update_items']);
         Route::post('{id}/unpublish', [PostController::class, 'unpublish'])->middleware(['role:super_admin|admin|arthur', 'permission:update_items']);
-        Route::post('{id}/like', [PostController::class, 'like'])->middleware('permission:view_items');
-        Route::delete('{id}/like', [PostController::class, 'unlike'])->middleware('permission:view_items');
+        
         
     });
 
     Route::prefix('post_views')->group(function () {
-        Route::post('posts/{postId}/view', [PostViewController::class, 'recordView'])->middleware('permission:view_items');
+        //// need pagination
         Route::get('posts/{postId}/views', [PostViewController::class, 'getViewsByPost'])->middleware(['role:super_admin|admin|arthur', 'permission:view_items']);
         Route::get('users/{userId}/views', [PostViewController::class, 'getViewsByUser'])->middleware(['role:super_admin|admin', 'permission:view_users']);
         Route::get('posts/{postId}/check-view', [PostViewController::class, 'checkUserViewedPost'])->middleware('permission:view_items');
@@ -128,11 +130,11 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('site_settings')->group(function () {
-        Route::get('settings', [SiteSettingController::class, 'index'])->middleware(['role:super_admin', 'permission:view_items']);
-        Route::get('settings/{key}', [SiteSettingController::class, 'show'])->middleware(['role:super_admin', 'permission:view_items']);
-        Route::put('settings/{key}', [SiteSettingController::class, 'update'])->middleware(['role:super_admin', 'permission:update_items']);
-        Route::post('settings', [SiteSettingController::class, 'store'])->middleware(['role:super_admin', 'permission:create_items']);
-        Route::delete('settings/{key}', [SiteSettingController::class, 'destroy'])->middleware(['role:super_admin', 'permission:delete_items']);
+        Route::get('/', [SiteSettingController::class, 'index'])->middleware(['role:super_admin', 'permission:view_items']);
+        Route::get('/{key}', [SiteSettingController::class, 'show'])->middleware(['role:super_admin', 'permission:view_items']);
+        Route::put('/{key}', [SiteSettingController::class, 'update'])->middleware(['role:super_admin', 'permission:update_items']);
+        Route::post('/', [SiteSettingController::class, 'store'])->middleware(['role:super_admin', 'permission:create_items']);
+        Route::delete('/{key}', [SiteSettingController::class, 'destroy'])->middleware(['role:super_admin', 'permission:delete_items']);
     });
 });
 

@@ -9,7 +9,6 @@ use App\Models\topic;
 use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -59,8 +58,8 @@ class TopicController implements TopicInterface
         try {
             $topic = topic::findOrFail($id);
             $deleted = $topic->delete();
-            if($deleted){
-                event(new TopicDeleted($topic));
+            if ($deleted) {
+                event(new TopicDeleted($topic->id));
             }
             return $deleted;
         } catch (ModelNotFoundException $e) {
@@ -88,7 +87,7 @@ class TopicController implements TopicInterface
         try {
             $topic = topic::findOrFail($id);
             $updated = $topic->update($newDetails);
-            if($updated){
+            if ($updated) {
                 event(new TopicUpdated($topic));
             }
             return $updated;
@@ -100,10 +99,19 @@ class TopicController implements TopicInterface
         }
     }
 
-    public function getTopicsByCategory(int $categoryId): Collection
+    public function getTopicsByCategory(string $search = null, int $perPage = 10, int $categoryId): LengthAwarePaginator
     {
         try {
-            return topic::where('category_id', $categoryId)->get();
+            return topic::where('category_id', $categoryId)
+                ->when(
+                    $search ?? null,
+                    fn($query, $search) =>
+                    $query->where(
+                        fn($q) =>
+                        $q->where('name', 'LIKE', "%{$search}%")
+                    )
+                )
+                ->latest()->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error retrieving topics by category');

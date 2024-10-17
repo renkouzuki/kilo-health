@@ -23,7 +23,7 @@ class PostResource extends JsonResource
             'read_time' => $this->read_time,
             'views' => $this->views,
             'likes' => $this->likes,
-            'published_at' => $this->published_at ? $this->published_at->toISOString() : null,
+            'published_at' => $this->published_at instanceof \Carbon\Carbon ? $this->published_at->toISOString() : null,
             'created_at' => $this->created_at->toISOString(),
             'updated_at' => $this->updated_at->toISOString(),
             'category' => $this->whenLoaded('category', function () {
@@ -42,7 +42,7 @@ class PostResource extends JsonResource
                     'avatar' => $this->author->avatar,
                 ];
             }),
-            'is_published' => !is_null($this->published_at) && $this->published_at->isPast(),
+            'is_published' => !is_null($this->published_at) && $this->published_at instanceof \Carbon\Carbon && $this->published_at->isPast(),
             'slug' => $this->slug ?? Str::slug($this->title),
             'excerpt' => Str::limit(strip_tags($this->description), 150),
             'read_time_text' => $this->read_time == 1 ? '1 minute read' : "{$this->read_time} minutes read",

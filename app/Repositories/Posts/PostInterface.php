@@ -9,13 +9,13 @@ use Illuminate\Pagination\LengthAwarePaginator;
 interface PostInterface
 {
     public function getAllPosts(Request $req, int $perPage): LengthAwarePaginator;
-    public function getPostById(int $id): ? post;
-    public function createPost(array $postData): post;
-    public function updatePost(int $id, array $postData): bool;
+    public function getPostById( string $search = null , int $perPage = 10, int $id): ? post;
+    public function getPostByIdForPublic(int $id): ?Post;
+    public function createPost(Request $req): post;
+    public function updatePost(int $id, Request $req): bool;
     public function deletePost(int $id): bool;
     public function getPostsByCategory(int $categoryId, int $perPage): LengthAwarePaginator;
     public function getPostsByAuthor(int $authorId, int $perPage): LengthAwarePaginator;
-    public function incrementViews(int $postId): bool;
     public function addLike(int $postId, int $userId): bool;
     public function removeLike(int $postId, int $userId): bool;
     public function getLikesCount(int $postId): int;

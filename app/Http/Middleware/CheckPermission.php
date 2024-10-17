@@ -16,7 +16,7 @@ class CheckPermission
     public function handle(Request $request, Closure $next , string $permission): Response
     {
         if (!$request->user() || !$request->user()->hasPermission($permission)) {
-            return response()->json(['message'=>'forbidden action!'] , 403);
+            return response()->json(['success'=>false ,'message'=>'forbidden action!'] , 403);
         }
 
         return $next($request);

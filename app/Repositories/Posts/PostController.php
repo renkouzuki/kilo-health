@@ -9,17 +9,20 @@ use App\Events\Posts\PostUnpublished;
 use App\Events\Posts\PostUpdated;
 use App\Models\post;
 use App\Services\AuditLogService;
+use App\Strategies\ContentStrategy;
+use App\Strategies\HtmlStrategy;
+use App\Strategies\MarkdownStrategy;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 
 class PostController implements PostInterface
 {
@@ -56,10 +59,16 @@ class PostController implements PostInterface
         }
     }
 
-    public function getPostById(int $id): ?Post
+    public function getPostById(string $search = null , int $perPage = 10, int $id): ?Post //// this one is for edit in backend admin
     {
         try {
-            return post::with(['category', 'author','uploadMedia'])->findOrFail($id);
+            $post = post::with(['category', 'author'])->findOrFail($id);
+
+            $media = $post->uploadMedia()->paginate($perPage);
+
+            $post->media = $media;
+
+            return $post;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Post not found');
         } catch (Exception $e) {
@@ -68,19 +77,40 @@ class PostController implements PostInterface
         }
     }
 
-    public function createPost(array $postData): Post
+    public function getPostByIdForPublic(int $id): ?Post /// for public use
     {
         try {
-            return DB::transaction(function () use ($postData) {
-                $postData['read_time'] = $this->calculateReadTime($postData['description']);
+            return Post::whereNotNull('published_at')
+            ->where('published_at', '<=', Carbon::now())
+            ->with(['category', 'author'])
+            ->findOrFail($id);
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Post not found');
+        } catch (Exception $e) {
+            Log::error('Error retrieving post: ' . $e->getMessage());
+            throw new Exception('Error retrieving post');
+        }
+    }
 
-                if (isset($postData['thumbnail']) && $postData['thumbnail'] instanceof UploadedFile) {
-                    $thumbnailPath = $postData['thumbnail']->store('post-thumbnails', 's3');
-                    $postData['thumbnail'] = $thumbnailPath;
-                }
+    public function createPost(Request $req): Post
+    {
+        try {
 
-                $post = post::create($postData);
-                $this->logService->log(Auth::id(), 'created_post', post::class, $post->id, json_encode($postData));
+            $strategy = $this->getContentStrategy($req->content_type);
+            $formattedContent = $strategy->formatContent($req->description);
+
+            $data = [
+                'title' => $req->title,
+                'description' => $formattedContent,
+                'category_id' => $req->category_id,
+                'author_id' => $req->user()->id,
+                'content_type' => $req->content_type,
+                'thumbnail' => $req->hasFile('thumbnail') ? $req->file('thumbnail')->store('post-thumbnails', 's3') : null
+            ];
+            return DB::transaction(function () use ($data, $req) {
+                $data['read_time'] = $this->calculateReadTime($req->description);
+                $post = post::create($data);
+                $this->logService->log(Auth::id(), 'created_post', post::class, $post->id, json_encode($data));
                 event(new PostCreated($post));
                 return $post;
             });
@@ -90,33 +120,34 @@ class PostController implements PostInterface
         }
     }
 
-    public function updatePost(int $id, array $postData): bool
+    public function updatePost(int $id, Request $req): bool
     {
         try {
-            return DB::transaction(function () use ($id, $postData) {
+            return DB::transaction(function () use ($id, $req) {
                 $post = post::findOrFail($id);
 
-                if (isset($postData['description'])) {
-                    $postData['read_time'] = $this->calculateReadTime($postData['description']);
+                $data = $req->only(['title', 'description', 'category_id', 'content_type', 'thumbnail']);
+
+                if ($req->has('description')) {
+                    $postData['read_time'] = $this->calculateReadTime($req->description);
                 }
 
-                if (isset($postData['thumbnail']) && $postData['thumbnail'] instanceof UploadedFile) {
+                if ($req->hasFile('thumbnail')) {
                     if ($post->thumbnail) {
                         Storage::disk('s3')->delete($post->thumbnail);
                     }
-
-                    $thumbnailPath = $postData['thumbnail']->store('post-thumbnails', 's3');
-                    $postData['thumbnail'] = $thumbnailPath;
+                    $data['thumbnail'] = $req->file('thumbnail')->store('post-thumbnails', 's3');
                 }
 
-                $updated = $post->update($postData);
+                $updated = $post->update($data);
                 if ($updated) {
-                    $this->logService->log(Auth::id(), 'updated_post', post::class, $id, json_encode($postData));
+                    $this->logService->log(Auth::id(), 'updated_post', post::class, $id, json_encode($data));
                     event(new PostUpdated($post));
                 }
                 return $updated;
             });
         } catch (ModelNotFoundException $e) {
+            Log::error('Error updating post: ' . $e->getMessage());
             throw new Exception('Post not found');
         } catch (Exception $e) {
             Log::error('Error updating post: ' . $e->getMessage());
@@ -165,18 +196,6 @@ class PostController implements PostInterface
         } catch (Exception $e) {
             Log::error('Error retrieving posts by author: ' . $e->getMessage());
             throw new Exception('Error retrieving posts by author');
-        }
-    }
-
-    public function incrementViews(int $postId): bool
-    {
-        try {
-            return post::where('id', $postId)->increment('views') > 0;
-        } catch (ModelNotFoundException $e) {
-            throw new Exception('Post not found');
-        } catch (Exception $e) {
-            Log::error('Error incrementing post views: ' . $e->getMessage());
-            throw new Exception('Error incrementing post views');
         }
     }
 
@@ -283,7 +302,7 @@ class PostController implements PostInterface
         }
     }
 
-    public function getPublishedPosts(Request $req , int $perPage): LengthAwarePaginator
+    public function getPublishedPosts(Request $req, int $perPage): LengthAwarePaginator
     {
         try {
             $query = post::query()
@@ -301,7 +320,7 @@ class PostController implements PostInterface
         }
     }
 
-    public function getTrashedPosts(Request $req , int $perPage): LengthAwarePaginator
+    public function getTrashedPosts(Request $req, int $perPage): LengthAwarePaginator
     {
         try {
             return post::onlyTrashed()
@@ -391,5 +410,15 @@ class PostController implements PostInterface
         $wordsPerMinute = 200;
         $wordCount = str_word_count(strip_tags($content));
         return max(1, ceil($wordCount / $wordsPerMinute));
+    }
+
+
+    private function getContentStrategy(string $contentType): ContentStrategy
+    {
+        return match ($contentType) {
+            'markdown' => new MarkdownStrategy(),
+            'html' => new HtmlStrategy(),
+            default => throw new InvalidArgumentException("Unsupported content type: $contentType")
+        };
     }
 }

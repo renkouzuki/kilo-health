@@ -10,10 +10,12 @@ use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CategoryController implements CategoryInterface
 {
@@ -56,15 +58,17 @@ class CategoryController implements CategoryInterface
         }
     }
 
-    public function createCategory(array $categoryDetails): categorie
+    public function createCategory(Request $req): categorie
     {
         try {
-            if (isset($categoryDetails['icon']) && $categoryDetails['icon'] instanceof UploadedFile) {
-                $logoPath = $categoryDetails['icon']->store('categories', 's3');
-                $validatedData['icon'] = $logoPath;
-            }
-            $category = categorie::create($categoryDetails);
-            $this->logService->log(Auth::id(), 'created_category', categorie::class, $category->id, json_encode($categoryDetails));
+            $data = [
+                'name' => $req->name,
+                'slug' => Str::slug($req->name),
+                'icon' => $req->hasFile('icon') ? $req->file('icon')->store('categories', 's3') : null
+            ];
+
+            $category = categorie::create($data);
+            $this->logService->log(Auth::id(), 'created_category', categorie::class, $category->id, json_encode($data));
             event(new CategoryCreated($category->id));
             return $category;
         } catch (Exception $e) {
@@ -73,21 +77,30 @@ class CategoryController implements CategoryInterface
         }
     }
 
-    public function updateCategory(int $id, array $newDetails): bool
+    public function updateCategory(int $id, Request $req): bool
     {
         try {
-            $category = categorie::findOrFail($id);
-            if (isset($newDetails['icon']) && $newDetails['icon'] instanceof UploadedFile) {
-                if ($category->logo) {
-                    Storage::disk('icon')->delete($category->icon);
-                }
 
-                $logoPath = $newDetails['icon']->store('categories', 's3');
-                $newDetails['icon'] = $logoPath;
+
+            $category = categorie::findOrFail($id);
+
+            $data = [
+                'name' => $req->name,
+                'slug' => Str::slug($req->name),
+            ];
+
+            if ($req->hasFile('icon')) {
+                if ($category->icon) {
+                    Storage::disk('s3')->delete($category->icon);
+                }
+                $data['icon'] = $req->file('icon')->store('categories', 's3');
             }
-            $updated = $category->update($newDetails);
+
+            $data = array_filter($data);
+
+            $updated = $category->update($data);
             if ($updated) {
-                $this->logService->log(Auth::id(), 'updated_category', categorie::class, $id, json_encode($newDetails));
+                $this->logService->log(Auth::id(), 'updated_category', categorie::class, $id, json_encode($data));
                 event(new CategoryUpdated($category));
             }
             return $updated;

@@ -6,12 +6,6 @@ use League\CommonMark\CommonMarkConverter;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\GithubFlavoredMarkdownExtension;
 
-interface ContentStrategy
-{
-    public function formatContent(string $content): string;
-    public function renderContent(string $content): string;
-}
-
 class MarkdownStrategy implements ContentStrategy
 {
     private $markdownConverter;
@@ -35,15 +29,3 @@ class MarkdownStrategy implements ContentStrategy
 }
 
 
-class HtmlStrategy implements ContentStrategy
-{
-    public function formatContent(string $content): string
-    {
-        return $content;
-    }
-
-    public function renderContent(string $content): string
-    {
-        return $content;
-    }
-}

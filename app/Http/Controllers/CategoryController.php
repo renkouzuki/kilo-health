@@ -45,14 +45,12 @@ class CategoryController extends Controller
     public function store(): JsonResponse
     {
         try {
-            $validatedData = $this->req->validate([
+            $this->req->validate([
                 'name' => 'required|max:255',
                 'icon' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
-            $validatedData['slug'] = Str::slug($validatedData['name']);
-
-            $category = $this->Repository->createCategory($validatedData);
+            $category = $this->Repository->createCategory($this->req);
             return response()->json(['success' => true, 'message' => 'Successfully store category', 'data' => new CategoryResource($category)], 201);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -74,14 +72,12 @@ class CategoryController extends Controller
     public function update(int $id): JsonResponse
     {
         try {
-            $validatedData = $this->req->validate([
+            $this->req->validate([
                 'name' => 'sometimes|string|max:255',
                 'icon' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
 
-            $validatedData['slug'] = Str::slug($validatedData['name']);
-
-            $this->Repository->updateCategory($id, $validatedData);
+            $this->Repository->updateCategory($id, $this->req);
             return response()->json(['success' => true, 'message' => 'Successfully updated category'], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);

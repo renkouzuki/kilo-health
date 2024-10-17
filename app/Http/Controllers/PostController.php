@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\anotherPost;
 use App\Http\Resources\PostResource;
+use App\Models\post;
+use App\pagination\paginating;
 use App\Repositories\Posts\PostInterface;
 use App\Strategies\ContentStrategy;
 use App\Strategies\HtmlStrategy;
@@ -18,19 +21,26 @@ class PostController extends Controller
     private Request $req;
 
     protected $Repository;
+    protected $pagination;
 
     public function __construct(PostInterface $repository, Request $req)
     {
         $this->req = $req;
         $this->Repository = $repository;
+        $this->pagination = new paginating();
     }
 
 
     public function index(): JsonResponse
     {
         try {
-            $posts = $this->Repository->getAllPosts($this->req, $this->req->per_page ?? 10);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieved posts', 'data' => PostResource::collection($posts)], 200);
+            $posts = $this->Repository->getAllPosts($this->req, $this->req->per_page ?? 5);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully retrieved posts',
+                'data' => PostResource::collection($posts),
+                'metada' => $this->pagination->metadata($posts)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -39,7 +49,7 @@ class PostController extends Controller
     public function store(): JsonResponse
     {
         try {
-            $validatedData = $this->req->validate([
+            $this->req->validate([
                 'title' => 'required|max:255',
                 'description' => 'required',
                 'category_id' => 'required|exists:categories,id',
@@ -47,17 +57,7 @@ class PostController extends Controller
                 'content_type' => 'required|in:html,markdown',
             ]);
 
-            $strategy = $this->getContentStrategy($validatedData['content_type']);
-            $formattedContent = $strategy->formatContent($validatedData['description']);
-
-            $post = $this->Repository->createPost([
-                'title' => $validatedData['title'],
-                'description' => $formattedContent,
-                'content_type' => $validatedData['content_type'],
-                'category_id' => $validatedData['category_id'],
-                'author_id' => $this->req->user()->id,
-                'thumbnail' => $validatedData['thumbnail']
-            ]);
+            $post = $this->Repository->createPost($this->req);
             return response()->json(['success' => true, 'message' => 'Successfully created post', 'data' => new PostResource($post)], 201);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -67,11 +67,35 @@ class PostController extends Controller
 
     public function show(int $id): JsonResponse
     {
+        $search = $this->req->search;
+        $perPage = $this->req->per_page ?? 10;
         try {
-            $post = $this->Repository->getPostById($id);
+            $post = $this->Repository->getPostById($search , $perPage ,$id);
             $strategy = $this->getContentStrategy($post->content_type);
             $post->rendered_content = $strategy->renderContent($post->description);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieved post', 'data' => new PostResource($post)], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully retrieved post',
+                'data' => new anotherPost($post)
+            ], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function publicShow(int $id): JsonResponse
+    {
+        try {
+            $post = $this->Repository->getPostByIdForPublic($id);
+            $strategy = $this->getContentStrategy($post->content_type);
+            $post->rendered_content = $strategy->renderContent($post->description);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully retrieved post',
+                'data' => new PostResource($post)
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
@@ -90,7 +114,7 @@ class PostController extends Controller
                 'content_type' => 'sometimes|required|in:markdown,html',
             ]);
 
-            $post = $this->Repository->getPostById($id);
+            $post = post::findorfail($id);
             if (!$post) {
                 return response()->json(['success' => false, 'message' => 'Post not found'], 404);
             }
@@ -100,9 +124,9 @@ class PostController extends Controller
                 $validatedData['description'] = $strategy->formatContent($validatedData['description']);
             }
 
-            $this->Repository->updatePost($id, $validatedData);
+            $this->Repository->updatePost($id, $this->req);
 
-            return response()->json(['success' => false, 'message' => 'Failed to update post'], 400);
+            return response()->json(['success' => true, 'message' => 'successfully to update post'], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
@@ -138,19 +162,12 @@ class PostController extends Controller
     {
         try {
             $posts = $this->Repository->getPublishedPosts($this->req, $this->req->per_page ?? 10);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving published posts', 'data' => PostResource::collection($posts)], 200);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
-    public function incrementViews(int $id): JsonResponse
-    {
-        try {
-            $this->Repository->incrementViews($id);
-            return response()->json(['success' => true, 'message' => 'Views incremented successfully'], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully retrieving published posts', 
+                'data' => PostResource::collection($posts),
+                'metadata'=> $this->pagination->metadata($posts)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -223,7 +240,12 @@ class PostController extends Controller
     {
         try {
             $trashedPosts = $this->Repository->getTrashedPosts($this->req, $this->req->per_page ?? 10);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving trashed posts', 'data' => PostResource::collection($trashedPosts)], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully retrieving trashed posts',
+                'data' => PostResource::collection($trashedPosts),
+                'metadata' => $this->pagination->metadata($trashedPosts)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

@@ -11,7 +11,7 @@ interface TopicInterface {
     public function getTopicById(int $id): ? topic;
     public function createTopic(array $topicDetails): topic;
     public function updateTopic(int $id, array $newDetails): bool;
-    public function getTopicsByCategory(int $categoryId): Collection;
+    public function getTopicsByCategory(string $search = null , int $perPage = 10 , int $categoryId): LengthAwarePaginator;
 
     public function deleteTopic(int $id): bool;
     public function restoreTopic(int $id): bool;
