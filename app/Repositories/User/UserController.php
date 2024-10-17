@@ -63,10 +63,11 @@ class UserController implements UserInterface
         }
     }
 
-    public function updatePermissions(Role $role, array $permissions): Role
+    public function updatePermissions(int $id, array $permissions): Role
     {
         DB::beginTransaction();
         try {
+            $role = Role::findOrFail($id);
             $role->permissions()->sync($permissions);
             DB::commit();
 
@@ -81,10 +82,11 @@ class UserController implements UserInterface
         }
     }
 
-    public function updateRole(User $user, int $roleId): User
+    public function updateRole(int $id, int $roleId): User
     {
         DB::beginTransaction();
         try {
+            $user = User::findOrFail($id);
             $user->role()->associate($roleId);
             $user->save();
 

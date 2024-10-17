@@ -9,8 +9,8 @@ use Illuminate\Http\Request;
 
 interface UserInterface {
     public function getUsers(string $search = null, int $perPage = 10):LengthAwarePaginator;
-    public function updatePermissions(Role $role, array $permissions): Role;
-    public function updateRole(User $user , int $roleId):User;
+    public function updatePermissions(int $id, array $permissions): Role;
+    public function updateRole(int $id, int $roleId):User;
     public function getDetails(User $user):User;
     public function softDelete(int $userId): void;
     public function getTrash(string $search = null , int $perPage = 10): LengthAwarePaginator;

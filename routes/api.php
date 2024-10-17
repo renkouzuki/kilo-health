@@ -52,8 +52,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [RoleController::class, 'show'])->middleware(['role:super_admin|admin', 'permission:view_roles']);
         Route::post('/', [RoleController::class, 'store'])->middleware(['role:super_admin', 'permission:create_roles']);
         Route::put('/{id}', [RoleController::class, 'update'])->middleware(['role:super_admin', 'permission:update_roles']);
-        Route::put('/{role}/permissions', [UserManagement::class, 'UpdateRolePermissions'])->middleware(['role:super_admin', 'permission:edit_roles']);
-        Route::put('/users/{user}/role', [UserManagement::class, 'UpdateUserRole'])->middleware(['role:super_admin', 'permission:edit_users']);
+        Route::put('/{id}/permissions', [UserManagement::class, 'UpdateRolePermissions'])->middleware(['role:super_admin', 'permission:edit_roles']);
+        Route::put('/users/{id}/role', [UserManagement::class, 'UpdateUserRole'])->middleware(['role:super_admin', 'permission:edit_users']);
         Route::delete('/{id}', [RoleController::class, 'destroy'])->middleware(['role:super_admin', 'permission:delete_roles']);
         Route::post('/{id}/restore', [RoleController::class, 'restore'])->middleware(['role:super_admin', 'permission:restore_roles']);
         Route::delete('/{id}/force', [RoleController::class, 'forceDelete'])->middleware(['role:super_admin', 'permission:force_delete_roles']);

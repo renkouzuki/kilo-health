@@ -65,7 +65,7 @@ class CategoryController implements CategoryInterface
             }
             $category = categorie::create($categoryDetails);
             $this->logService->log(Auth::id(), 'created_category', categorie::class, $category->id, json_encode($categoryDetails));
-            event(new CategoryCreated($category));
+            event(new CategoryCreated($category->id));
             return $category;
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());

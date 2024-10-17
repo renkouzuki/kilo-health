@@ -61,7 +61,7 @@ class UserManagement extends Controller
         }
     }
 
-    public function UpdateRolePermissions(Role $role)
+    public function UpdateRolePermissions(int $id)
     {
 
         $this->req->validate([
@@ -70,7 +70,7 @@ class UserManagement extends Controller
         ]);
 
         try {
-            $role = $this->Repository->updatePermissions($role, $this->req->permissions);
+            $role = $this->Repository->updatePermissions($id, $this->req->permissions);
             return response()->json([
                 'success' => true,
                 'message' => 'Role permissions updated successfully',
@@ -81,7 +81,7 @@ class UserManagement extends Controller
         }
     }
 
-    public function UpdateUserRole(User $user)
+    public function UpdateUserRole(int $id)
     {
 
         $this->req->validate([
@@ -90,7 +90,7 @@ class UserManagement extends Controller
 
         try {
 
-            $user = $this->Repository->updateRole($user, $this->req->role_id);
+            $user = $this->Repository->updateRole($id, $this->req->role_id);
 
             return response()->json([
                 'success' => true,
