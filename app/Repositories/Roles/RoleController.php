@@ -8,14 +8,23 @@ use App\Events\Role\RoleForceDeleted;
 use App\Events\Role\RoleRestored;
 use App\Events\Role\RoleUpdated;
 use App\Models\Role;
+use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class RoleController implements RoleInterface
 {
+    protected $logService;
+
+    public function __construct(AuditLogService $logService)
+    {
+        $this->logService = $logService;
+    }
+
     public function getRoles(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
@@ -51,6 +60,7 @@ class RoleController implements RoleInterface
     {
         try {
             $role = Role::create($data);
+            $this->logService->log(Auth::id(), 'created_role', Role::class, $role->id, json_encode($data));
             event(new RoleCreated($role));
             return $role;
         } catch (Exception $e) {
@@ -65,7 +75,10 @@ class RoleController implements RoleInterface
         try {
             $role = Role::findOrFail($id);
             $updated = $role->update($newsDetails);
-            event(new RoleUpdated($role));
+            if($updated) {
+                $this->logService->log(Auth::id(), 'updated_role', Role::class, $role->id, json_encode($newsDetails));
+                event(new RoleUpdated($role));
+            }
             return $updated;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Role not found');
@@ -80,7 +93,10 @@ class RoleController implements RoleInterface
         try {
             $role = Role::findOrFail($id);
             $deleted = $role->delete();
-            event(new RoleDeleted($id));
+            if ($deleted) {
+                $this->logService->log(Auth::id(), 'deleted_role', Role::class, $id, null);
+                event(new RoleDeleted($id));
+            }
             return $deleted;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Role not found');
@@ -95,7 +111,10 @@ class RoleController implements RoleInterface
         try {
             $role = Role::withTrashed()->findOrFail($id);
             $restored = $role->restore();
-            event(new RoleRestored($role));
+            if($restored){
+                $this->logService->log(Auth::id(), 'restored_role', Role::class, $id, null);
+                event(new RoleRestored($role));
+            }
             return $restored;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Role not found');
@@ -108,8 +127,23 @@ class RoleController implements RoleInterface
     public function forceDeleteRole(int $id): bool
     {
         try {
-            $forceDeleted = Role::withTrashed()->findOrFail($id)->forceDelete();
-            event(new RoleForceDeleted($id));
+            $role = Role::withTrashed()->findOrFail($id);
+
+            $dataToDelete = [
+                'id' => $role->id,
+                'name' => $role->name,
+            ];
+    
+            $forceDeleted = $role->forceDelete();
+            
+            if ($forceDeleted) {
+                $this->logService->log(Auth::id(), 'force_deleted_role', Role::class, $id, json_encode([
+                    'model' => get_class($role),
+                    'data' => $dataToDelete
+                ]));
+                event(new RoleForceDeleted($id));
+            }
+    
             return $forceDeleted;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Role not found');

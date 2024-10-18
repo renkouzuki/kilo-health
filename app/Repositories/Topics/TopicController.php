@@ -137,16 +137,32 @@ class TopicController implements TopicInterface
     public function forceDeleteTopic(int $id): bool
     {
         try {
-            $forceDeleted = topic::withTrashed()->findOrFail($id)->forceDelete();
+            $topic = topic::withTrashed()->findOrFail($id);
+
+            $dataToDelete = [
+                'id' => $topic->id,
+                'name' => $topic->name,
+                'category_id' => $topic->category_id,
+            ];
+
+            $forceDeleted = $topic->forceDelete();
+
             if ($forceDeleted) {
-                $this->logService->log(Auth::id(), 'force_deleted_topic', topic::class, $id, null);
+                $this->logService->log(Auth::id(), 'force_deleted_topic', topic::class, $id, json_encode([
+                    'model' => get_class($topic),
+                    'data' => $dataToDelete,
+                ]));
             }
+
             return $forceDeleted;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Topic not found');
         } catch (Exception $e) {
-            Log::error('Database error: ' . $e->getMessage());
+            Log::error('Error force deleting topic: ' . $e->getMessage());
             throw new Exception('Error force deleting topic');
         }
     }
+
 
     public function getTrashedTopics(?string $search = null, int $perPage = 10): LengthAwarePaginator
     {

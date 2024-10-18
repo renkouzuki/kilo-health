@@ -8,13 +8,23 @@ use App\Events\Permission\PermissionForceDeleted;
 use App\Events\Permission\PermissionRestored;
 use App\Events\Permission\PermissionUpdated;
 use App\Models\Permission;
+use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class PermissionController implements PermissionInterface
 {
+
+    protected $logService;
+
+    public function __construct(AuditLogService $logService) 
+    {
+        $this->logService = $logService;
+    }
+
     public function getPermissions(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
@@ -49,6 +59,7 @@ class PermissionController implements PermissionInterface
     {
         try {
             $permission = Permission::create($data);
+            $this->logService->log(Auth::id(), 'created_permission', Permission::class, $permission->id,json_encode($data));
             event(new PermissionCreated($permission));
             return $permission;
         } catch (Exception $e) {
@@ -62,7 +73,10 @@ class PermissionController implements PermissionInterface
         try {
             $permission = Permission::findOrFail($id);
             $updated = $permission->update($newDetails);
-            event(new PermissionUpdated($permission));
+            if($updated){
+                $this->logService->log(Auth::id(), 'updated_permission', Permission::class, $permission->id,json_encode($newDetails));
+                event(new PermissionUpdated($permission));
+            }
             return $updated;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Permission not found');
@@ -94,7 +108,10 @@ class PermissionController implements PermissionInterface
         try {
             $permission = Permission::findOrFail($id);
             $deleted = $permission->delete();
-            event(new PermissionDeleted($id));
+            if($deleted){
+                $this->logService->log(Auth::id(), 'deleted_permission', Permission::class, $id, null);
+                event(new PermissionDeleted($id));
+            }
             return $deleted;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Permission not found');
@@ -107,9 +124,12 @@ class PermissionController implements PermissionInterface
     public function restorePermission(int $id): bool
     {
         try {
-             $permission = Permission::withTrashed()->findOrFail($id);
-             $restored = $permission->restore();
-            event(new PermissionRestored($permission));
+            $permission = Permission::withTrashed()->findOrFail($id);
+            $restored = $permission->restore();
+            if($restored){
+                $this->logService->log(Auth::id(), 'restored_permission', Permission::class, $id, null);
+                event(new PermissionRestored($permission));
+            }
             return $restored;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Permission not found');
@@ -122,8 +142,22 @@ class PermissionController implements PermissionInterface
     public function forceDeletePermission(int $id): bool
     {
         try {
-            $forceDeleted = Permission::withTrashed()->findOrFail($id)->forceDelete();
-            event(new PermissionForceDeleted($id));
+            $permission = Permission::withTrashed()->findOrFail($id);
+            $dataToDelete = [
+                'id' => $permission->id,
+                'name' => $permission->name
+            ];
+
+            $forceDeleted = $permission->forceDelete();
+
+            if ($forceDeleted) {
+                $this->logService->log(Auth::id(), 'force_deleted_permission', Permission::class, $id, json_encode([
+                    'model' => get_class($permission),
+                    'data' => $dataToDelete
+                ]));
+                event(new PermissionForceDeleted($id));
+            }
+
             return $forceDeleted;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Permission not found');

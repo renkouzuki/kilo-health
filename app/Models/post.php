@@ -33,7 +33,7 @@ class post extends Model
 
     public function uploadMedia()
     {
-        return $this->hasMany(upload_media::class);
+        return $this->belongsTo(upload_media::class);
     }
 
     public function likes()
@@ -41,4 +41,7 @@ class post extends Model
         return $this->belongsToMany(User::class, 'post_likes');// this shit doesnt need ->withTimestamp() to work;
     }
 
+    public function postPhotos(){
+        return $this->hasMany(more_post_photos::class);
+    }
 }

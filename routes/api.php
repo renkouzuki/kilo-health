@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\authenticate;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PemrissionController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\postPhotosController;
 use App\Http\Controllers\PostViewController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SiteSettingController;
@@ -47,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{userId}/force-delete', [UserManagement::class, 'ForceDeleteUser'])->middleware(['role:super_admin', 'permission:force_delete_users']);
         /////// implementing audit log db roll back for accidentally delete data
         Route::get('/auditlog/{userId}', [UserManagement::class, 'getAuditLog'])->middleware(['role:super_admin', 'permission:view_log']);
+        Route::post('/{userId}/rollbackData', [UserManagement::class, 'rollbackDelete'])->middleware(['role:super_admin']);
     });
 
     Route::prefix('roles')->group(function(){
@@ -111,8 +113,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('{id}/force', [PostController::class, 'forceDelete'])->middleware(['role:super_admin', 'permission:force_delete_items']);
         Route::post('{id}/publish', [PostController::class, 'publish'])->middleware(['role:super_admin|admin|arthur', 'permission:update_items']);
         Route::post('{id}/unpublish', [PostController::class, 'unpublish'])->middleware(['role:super_admin|admin|arthur', 'permission:update_items']);
-        
-        
     });
 
     Route::prefix('post_views')->group(function () {
@@ -123,10 +123,26 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::prefix('upload_media')->group(function () {
-        Route::post('posts/{postId}/media', [UploadMediaController::class, 'upload'])->middleware(['role:super_admin|admin|arthur', 'permission:create_items']);
-        Route::get('posts/{postId}/media', [UploadMediaController::class, 'getMediaByPost'])->middleware('permission:view_items');
-        Route::delete('media/{mediaId}', [UploadMediaController::class, 'deleteMedia'])->middleware(['role:super_admin|admin|arthur', 'permission:delete_items']);
-        Route::get('media/{mediaId}', [UploadMediaController::class, 'getMedia'])->middleware('permission:view_items');
+        Route::get('/', [UploadMediaController::class, 'index'])->middleware(['role:super_admin|admin', 'permission:view_items']);
+        Route::get('/trashed', [UploadMediaController::class, 'trashed'])->middleware(['role:super_admin|admin', 'permission:view_delete_items']);
+        Route::post('/', [UploadMediaController::class, 'upload'])->middleware(['role:super_admin|admin|arthur', 'permission:create_items']);
+        //Route::get('/{id}/media', [UploadMediaController::class, 'getMediaByPost'])->middleware('permission:view_items');
+        Route::delete('/{id}', [UploadMediaController::class, 'deleteMedia'])->middleware(['role:super_admin|admin|arthur', 'permission:delete_items']);
+        Route::get('/{id}', [UploadMediaController::class, 'getMedia'])->middleware('permission:view_items');
+        Route::post('/{id}/restore', [UploadMediaController::class, 'restored'])->middleware(['role:super_admin|admin', 'permission:restore_items']);
+        Route::delete('/{id}/force', [UploadMediaController::class, 'forceDeleted'])->middleware(['role:super_admin', 'permission:force_delete_items']);
+    });
+
+    //// retrieve post thumbnail click having more photos daetail routes
+    Route::prefix('post_photos')->group(function(){
+        Route::get('/trashed' , [postPhotosController::class , 'trashed'])->middleware(['role:super_admin|admin', 'permission:view_delete_items']);
+        Route::get('/{id}/photos' , [postPhotosController::class , 'index'])->middleware(['permission:view_items']);
+        Route::post('/{id}' , [postPhotosController::class , 'store'])->middleware(['role:super_admin|admin', 'permission:create_items']);
+        Route::get('/{id}' , [postPhotosController::class , 'show'])->middleware('permission:view_items');
+        Route::put('/{id}' , [postPhotosController::class , 'update'])->middleware(['role:super_admin|admin', 'permission:update_items']);
+        Route::delete('/{id}' , [postPhotosController::class , 'destroy'])->middleware(['role:super_admin|admin', 'permission:delete_items']);
+        Route::post('/{id}/restore' , [postPhotosController::class , 'restore'])->middleware(['role:super_admin|admin', 'permission:restore_items']);
+        Route::delete('/{id}/force' , [postPhotosController::class , 'forceDelete'])->middleware(['role:super_admin', 'permission:force_delete_items']);
     });
 
     Route::prefix('site_settings')->group(function () {
@@ -135,6 +151,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{key}', [SiteSettingController::class, 'update'])->middleware(['role:super_admin', 'permission:update_items']);
         Route::post('/', [SiteSettingController::class, 'store'])->middleware(['role:super_admin', 'permission:create_items']);
         Route::delete('/{key}', [SiteSettingController::class, 'destroy'])->middleware(['role:super_admin', 'permission:delete_items']);
+
+        //// need get site_settings data to be display on frontend page like logo or something
     });
 });
 

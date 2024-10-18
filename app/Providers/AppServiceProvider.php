@@ -6,6 +6,8 @@ use App\Repositories\Category\CategoryController;
 use App\Repositories\Category\CategoryInterface;
 use App\Repositories\Permissions\PermissionController;
 use App\Repositories\Permissions\PermissionInterface;
+use App\Repositories\postPhotos\postPhotosController;
+use App\Repositories\postPhotos\postPhotosInterface;
 use App\Repositories\Posts\PostController;
 use App\Repositories\Posts\PostInterface;
 use App\Repositories\PostViews\PostViewController;
@@ -40,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PermissionInterface::class , PermissionController::class);
         $this->app->bind(SiteSettingInterface::class  , SiteSettingController::class);
         $this->app->bind(UploadMediaInterface::class , UploadMediaController::class);
+        $this->app->bind(postPhotosInterface::class , postPhotosController::class);
 
         $this->app->singleton(AuditLogService::class, function ($app) {
             return new AuditLogService();

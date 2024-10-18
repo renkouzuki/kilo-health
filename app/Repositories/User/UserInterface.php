@@ -18,4 +18,5 @@ interface UserInterface {
     public function forceDelete(int $userId): void;
     public function editUserInfo(Request $req):User;
     public function getAuditLogs(int $userId, int $perPage = 10): LengthAwarePaginator;
+    public function rollbackDelete(int $logId): bool;
 }

@@ -22,13 +22,13 @@ class SiteSettingController implements SiteSettingInterface
         $this->logService = $logService;
     }
 
-    public function getAllSettings(string $search = null , int $perPage = 10): LengthAwarePaginator
+    public function getAllSettings(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
             $query = site_setting::query()
-            ->when($search , function($query,$search){
-               return $query->where('name' , 'LIKE' , "%{$search}%");
-            })->orderBy('created_at', 'desc');
+                ->when($search, function ($query, $search) {
+                    return $query->where('name', 'LIKE', "%{$search}%");
+                })->orderBy('created_at', 'desc');
             return $query->latest()->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Error retrieving all settings: ' . $e->getMessage());
@@ -59,13 +59,13 @@ class SiteSettingController implements SiteSettingInterface
 
             $data = [
                 'name' => $req->name,
-                'input_type'=>$req->input_type
+                'input_type' => $req->input_type
             ];
 
-            if($req->hasFile('image')){
+            if ($req->hasFile('image')) {
                 Storage::disk('s3')->delete($setting->value);
-                $data['value'] = $req->file('image')->store('site_image' , 's3');
-            }else{
+                $data['value'] = $req->file('image')->store('site_image', 's3');
+            } else {
                 $data['value'] = $req->value;
             }
 
@@ -80,7 +80,7 @@ class SiteSettingController implements SiteSettingInterface
                 ]));
             }
             return $updated;
-        } catch (ModelNotFoundException $e){
+        } catch (ModelNotFoundException $e) {
             throw new Exception('site_setting not found');
         } catch (Exception $e) {
             Log::error('Error updating setting: ' . $e->getMessage());
@@ -94,8 +94,8 @@ class SiteSettingController implements SiteSettingInterface
             $data = [
                 'key' => $req->key,
                 'name' => $req->name,
-                'value' => $req->hasFile('image') ? $req->file('image')->store('site_image' , 's3') : $req->value,
-                'input_type'=>$req->input_type
+                'value' => $req->hasFile('image') ? $req->file('image')->store('site_image', 's3') : $req->value,
+                'input_type' => $req->input_type
             ];
 
             $setting = site_setting::create($data);
@@ -110,14 +110,33 @@ class SiteSettingController implements SiteSettingInterface
     public function deleteSetting(string $key): bool
     {
         try {
+            
             $setting = site_setting::where('key', $key)->first();
             if (!$setting) {
                 return false;
             }
+
+            $dataToDelete = [
+                'id' => $setting->id,
+                'key' => $setting->key,
+                'name' => $setting->name,
+                'input_type' => $setting->input_type,
+                'value' => $setting->value,
+            ];
+
             $deleted = $setting->delete();
+
             if ($deleted) {
-                $this->logService->log(Auth::id(), 'deleted_setting', site_setting::class, $setting->id, json_encode(['key' => $key]));
+                if ($setting->input_type == 'image' && $setting->value) {
+                    Storage::disk('s3')->delete($setting->value);
+                }
+
+                $this->logService->log(Auth::id(), 'deleted_setting', site_setting::class, $setting->id, json_encode([
+                    'model' => get_class($setting),
+                    'data' => $dataToDelete,
+                ]));
             }
+
             return $deleted;
         } catch (Exception $e) {
             Log::error('Error deleting setting: ' . $e->getMessage());

@@ -161,9 +161,25 @@ class CategoryController implements CategoryInterface
     public function forceDeleteCategory(int $id): bool
     {
         try {
-            $forceDeleted = categorie::withTrashed()->findOrFail($id)->forceDelete();
+            $category = categorie::withTrashed()->findOrFail($id);
+
+            $dataToDelete = [
+                'id' => $category->id,
+                'name' => $category->name,
+                'icon' => $category->icon,
+                'slug' => $category->slug
+            ];
+
+            $forceDeleted = $category->forceDelete();
+
             if ($forceDeleted) {
-                $this->logService->log(Auth::id(), 'force_deleted_category', categorie::class, $id, null);
+                if ($category->icon) {
+                    Storage::disk('s3')->delete($category->icon);
+                }
+                $this->logService->log(Auth::id(), 'force_deleted_category', categorie::class, $id, json_encode([
+                    'model' => get_class($category),
+                    'data' => $dataToDelete
+                ]));
             }
             return $forceDeleted;
         } catch (ModelNotFoundException $e) {

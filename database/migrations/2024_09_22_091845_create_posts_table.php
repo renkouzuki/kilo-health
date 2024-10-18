@@ -16,7 +16,9 @@ return new class extends Migration
             $table->string('title', 255);
             $table->text('description');
             $table->foreignId('category_id')->constrained()->onDelete('cascade');
+            $table->string('content_type')->default('html');
             $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('upload_media_id')->nullable()->constrained()->onDelete('set null');
             $table->string('thumbnail', 500);
             $table->integer('read_time')->comment('Read time in minutes');
             $table->timestamp('published_at')->nullable();

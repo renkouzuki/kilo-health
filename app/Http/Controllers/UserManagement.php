@@ -102,6 +102,16 @@ class UserManagement extends Controller
         }
     }
 
+    public function rollbackDelete(int $userId): JsonResponse
+    {
+        try {
+            $this->Repository->rollbackDelete($userId);
+            return response()->json(['success' => true, 'message' => 'User restored successfully'], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function SoftDeleteUser(int $userId)
     {
         try {
@@ -119,12 +129,12 @@ class UserManagement extends Controller
         $search = $this->req->search;
         $perPage = $this->req->per_page ?? 10;
         try {
-            $data = $this->Repository->getTrash($search , $perPage);
+            $data = $this->Repository->getTrash($search, $perPage);
             return response()->json([
                 'success' => true,
                 'message' => 'Soft deleted users retrieved successfully',
                 'data' => anotheruser::collection($data),
-                'meta'=> $this->pagination->metadata($data)
+                'meta' => $this->pagination->metadata($data)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

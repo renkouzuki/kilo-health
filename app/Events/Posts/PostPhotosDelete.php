@@ -11,7 +11,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MediaDeleted implements ShouldBroadcastNow
+class PostPhotosDelete implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -19,10 +19,12 @@ class MediaDeleted implements ShouldBroadcastNow
      * Create a new event instance.
      */
     public $mediaId;
+    public $postId;
 
-    public function __construct(int $mediaId)
+    public function __construct(int $mediaId , int $postId)
     {
         $this->mediaId = $mediaId;
+        $this->postId = $postId;
     }
 
     /**
@@ -30,8 +32,10 @@ class MediaDeleted implements ShouldBroadcastNow
      *
      * @return array<int, \Illuminate\Broadcasting\Channel>
      */
-    public function broadcastOn()
+    public function broadcastOn(): array
     {
-        return new Channel('media');
+        return [
+            new PrivateChannel('post-photos'),
+        ];
     }
 }

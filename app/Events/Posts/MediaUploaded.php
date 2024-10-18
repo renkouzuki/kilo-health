@@ -33,6 +33,6 @@ class MediaUploaded implements ShouldBroadcastNow
      */
     public function broadcastOn()
     {
-        return new Channel('channel-name');
+        return new Channel('media');
     }
 }

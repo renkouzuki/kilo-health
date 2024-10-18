@@ -7,14 +7,17 @@ use App\Events\Posts\MediaUploaded;
 use App\Models\upload_media;
 use App\Services\AuditLogService;
 use Exception;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class UploadMediaController implements UploadMediaInterface
 {
-    
+
     protected $logService;
 
     public function __construct(AuditLogService $logService)
@@ -22,53 +25,82 @@ class UploadMediaController implements UploadMediaInterface
         $this->logService = $logService;
     }
 
-    public function uploadMedia(Request $req , int $postId): upload_media
+    public function getMedias(?string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            $data = ['post_id' => $postId];
-            if($req->hasFile('file')){
-                foreach($req->file('file') as $file){
-                    $data['url'][] = $file;
+            return upload_media::query()->when(
+                $search ?? null,
+                fn($query, $search) =>
+                $query->where(
+                    fn($q) =>
+                    $q->where('url', 'LIKE', "%{$search}%")
+                )
+            )->latest()->paginate($perPage);
+        } catch (Exception $e) {
+            Log::error('Error deleting media: ' . $e->getMessage());
+            throw new Exception('Error deleting media');
+        }
+    }
+
+    public function uploadMedia(Request $req): array
+    {
+        try {
+            $mediaItems = [];
+
+            if ($req->hasFile('file')) {
+                foreach ($req->file('file') as $file) {
+                    $url = $file->store('upload_media', 's3');
+
+                    $mediaItem = upload_media::create(['url' => $url]);
+
+                    $this->logService->log(Auth::id(), 'uploaded_media', upload_media::class, $mediaItem->id, json_encode(['url' => $url]));
+
+                    event(new MediaUploaded($mediaItem));
+
+                    $mediaItems[] = $mediaItem;
                 }
             }
 
-            $media = upload_media::create($data);
-
-            $this->logService->log(Auth::id(), 'uploaded_media', upload_media::class, $media->id, json_encode([
-                'post_id' => $postId,
-                'url' => $data['url'],
-            ]));
-            event(new MediaUploaded($media));
-            return $media;
+            return $mediaItems;
         } catch (Exception $e) {
             Log::error('Error uploading media: ' . $e->getMessage());
             throw new Exception('Error uploading media');
         }
     }
 
-    public function getMediaByPost(int $postId): Collection
+
+    //public function getMediaByPost(int $postId): Collection
+    //{
+    //    try {
+    //        return upload_media::where('post_id', $postId)->get();
+    //    } catch (Exception $e) {
+    //        Log::error('Error retrieving media: ' . $e->getMessage());
+    //        throw new Exception('Error retrieving media');
+    //    }
+    //}
+
+    public function getMediaById(int $mediaId): ?upload_media
     {
         try {
-            return upload_media::where('post_id', $postId)->get();
+            return upload_media::findOrFail($mediaId)->load(['post']);
         } catch (Exception $e) {
             Log::error('Error retrieving media: ' . $e->getMessage());
             throw new Exception('Error retrieving media');
         }
     }
 
+
     public function deleteMedia(int $mediaId): bool
     {
         try {
             $media = upload_media::findOrFail($mediaId);
-            Storage::disk('public')->delete($media->url);
             $deleted = $media->delete();
-
             if ($deleted) {
+                Storage::disk('s3')->delete($media->url);
                 $this->logService->log(Auth::id(), 'deleted_media', upload_media::class, $mediaId, json_encode([
                     'url' => $media->url,
-                    'post_id' => $media->post_id
                 ]));
-                event(new MediaDeleted($mediaId, $media->post_id));
+                event(new MediaDeleted($mediaId));
             }
 
             return $deleted;
@@ -78,13 +110,68 @@ class UploadMediaController implements UploadMediaInterface
         }
     }
 
-    public function getMediaById(int $mediaId): ?upload_media
+    public function getTrashed(?string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            return upload_media::find($mediaId);
+            return upload_media::onlyTrashed()->when(
+                $search ?? null,
+                fn($query, $search) =>
+                $query->where(
+                    fn($q) =>
+                    $q->where('url', 'LIKE', "%{$search}%")
+                )
+            )->latest()->paginate($perPage);
         } catch (Exception $e) {
-            Log::error('Error retrieving media: ' . $e->getMessage());
-            throw new Exception('Error retrieving media');
+            Log::error('Error deleting media: ' . $e->getMessage());
+            throw new Exception('Error deleting media');
+        }
+    }
+
+    public function restore(int $mediaId): bool
+    {
+        try {
+            $restored = upload_media::withTrashed()->findOrFail($mediaId)->restore();
+            if ($restored) {
+                $this->logService->log(Auth::id(), 'restored_media', upload_media::class, $mediaId, null);
+            }
+            return $restored;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Media not found');
+        } catch (Exception $e) {
+            Log::error('Error deleting media: ' . $e->getMessage());
+            throw new Exception('Error deleting media');
+        }
+    }
+
+    public function forceDelete(int $mediaId): bool
+    {
+        try {
+            $uploadmedia = upload_media::withTrashed()->findOrFail($mediaId);
+
+            $dataToDelete = [
+                'id' => $uploadmedia->id,
+                'url' => $uploadmedia->url,
+            ];
+
+            $forceDeleted = $uploadmedia->forceDelete();
+
+            if ($forceDeleted) {
+                if ($uploadmedia->url) {
+                    Storage::disk('s3')->delete($uploadmedia->url);
+                }
+
+                $this->logService->log(Auth::id(), 'force_deleted_media', upload_media::class, $mediaId, json_encode([
+                    'model' => get_class($uploadmedia),
+                    'data' => $dataToDelete,
+                ]));
+            }
+
+            return $forceDeleted;
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Media not found');
+        } catch (Exception $e) {
+            Log::error('Error deleting media: ' . $e->getMessage());
+            throw new Exception('Error deleting media');
         }
     }
 }

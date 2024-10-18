@@ -2,6 +2,7 @@
 
 namespace App\Events\Posts;
 
+use App\Models\more_post_photos;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -11,18 +12,18 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MediaDeleted implements ShouldBroadcastNow
+class PostPhotosCreate implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public $mediaId;
+    public $media;
 
-    public function __construct(int $mediaId)
+    public function __construct(more_post_photos $media)
     {
-        $this->mediaId = $mediaId;
+        $this->media = $media;
     }
 
     /**
@@ -30,8 +31,10 @@ class MediaDeleted implements ShouldBroadcastNow
      *
      * @return array<int, \Illuminate\Broadcasting\Channel>
      */
-    public function broadcastOn()
+    public function broadcastOn(): array
     {
-        return new Channel('media');
+        return [
+            new PrivateChannel('post-photos'),
+        ];
     }
 }

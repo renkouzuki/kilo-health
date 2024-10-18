@@ -12,6 +12,7 @@ use App\Models\AuditLogs;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Traits\ModelNameFormatterTrait;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -24,6 +25,7 @@ use Illuminate\Support\Facades\Storage;
 
 class UserController implements UserInterface
 {
+    use ModelNameFormatterTrait;
 
     protected $logService;
 
@@ -215,6 +217,38 @@ class UserController implements UserInterface
         } catch (Exception $e) {
             Log::error('Error retrieving audit logs: ' . $e->getMessage());
             throw new Exception('Error retrieving audit logs');
+        }
+    }
+
+    public function rollbackDelete(int $logId): bool
+    {
+        $logEntry = AuditLogs::find($logId);
+        if (!$logEntry) {
+            throw new Exception('Log entry not found');
+        }
+
+        $changes = $this->decodeAndFormatChanges($logEntry->changes);
+
+        if (!is_array($changes) || !isset($changes['model']) || !isset($changes['data'])) {
+            Log::error('Invalid log data structure for ID: ' . $logId);
+            throw new Exception('Invalid log data');
+        }
+
+        $modelClass = $changes['model'];
+        $data = $changes['data'];
+
+        if (!class_exists($modelClass)) {
+            Log::error("Model class not found: {$modelClass}");
+            throw new Exception("Model class {$modelClass} not found");
+        }
+
+        try {
+            $modelClass::create($data);
+            Log::info("Successfully rolled back delete for {$modelClass} with ID: {$data['id']}");
+            return true;
+        } catch (Exception $e) {
+            Log::error("Error rolling back delete: " . $e->getMessage());
+            throw new Exception('Error rolling back delete: ' . $e->getMessage());
         }
     }
 }

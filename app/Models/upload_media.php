@@ -10,10 +10,10 @@ class upload_media extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['url', 'post_id'];
+    protected $fillable = ['url'];
 
     public function post()
     {
-        return $this->belongsTo(post::class);
+        return $this->hasMany(post::class);
     }
 }

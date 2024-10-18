@@ -8,6 +8,7 @@ use App\Events\Posts\PostPublished;
 use App\Events\Posts\PostUnpublished;
 use App\Events\Posts\PostUpdated;
 use App\Models\post;
+use App\Models\upload_media;
 use App\Services\AuditLogService;
 use App\Strategies\ContentStrategy;
 use App\Strategies\HtmlStrategy;
@@ -59,7 +60,7 @@ class PostController implements PostInterface
         }
     }
 
-    public function getPostById(string $search = null , int $perPage = 10, int $id): ?Post //// this one is for edit in backend admin
+    public function getPostById(string $search = null, int $perPage = 10, int $id): ?Post //// this one is for edit in backend admin
     {
         try {
             $post = post::with(['category', 'author'])->findOrFail($id);
@@ -81,9 +82,9 @@ class PostController implements PostInterface
     {
         try {
             return Post::whereNotNull('published_at')
-            ->where('published_at', '<=', Carbon::now())
-            ->with(['category', 'author'])
-            ->findOrFail($id);
+                ->where('published_at', '<=', Carbon::now())
+                ->with(['category', 'author'])
+                ->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             throw new Exception('Post not found');
         } catch (Exception $e) {
@@ -104,9 +105,20 @@ class PostController implements PostInterface
                 'description' => $formattedContent,
                 'category_id' => $req->category_id,
                 'author_id' => $req->user()->id,
-                'content_type' => $req->content_type,
-                'thumbnail' => $req->hasFile('thumbnail') ? $req->file('thumbnail')->store('post-thumbnails', 's3') : null
+                'content_type' => $req->content_type
             ];
+
+            $thumbnailMediaId = null;
+            if ($req->hasFile('thumbnail')) {
+                $data['thumbnail'] = $req->file('thumbnail')->store('post-thumbnails', 's3');
+
+                $thumbnailMediaId = upload_media::create([
+                    'url' => $data['thumbnail']
+                ])->id;
+            }
+
+            $data['upload_media_id'] = $thumbnailMediaId;
+
             return DB::transaction(function () use ($data, $req) {
                 $data['read_time'] = $this->calculateReadTime($req->description);
                 $post = post::create($data);
@@ -352,9 +364,31 @@ class PostController implements PostInterface
     public function forceDeletePost(int $postId): bool
     {
         try {
-            $forceDeleted = post::withTrashed()->findOrFail($postId)->forceDelete();
+            $post = post::withTrashed()->findOrFail($postId);
+
+            $dataToDelete = [
+                'id' => $post->id,
+                'title' => $post->title,
+                'description' => $post->description,
+                'category_id' => $post->category_id,
+                'author_id' => $post->author_id,
+                'upload_media_id' => $post->upload_media_id,
+                'thumbnail' => $post->thumbnail,
+                'read_time' => $post->read_time,
+                'published_at' => $post->published_at,
+                'views' => $post->views,
+                'likes' => $post->likes,
+            ];
+
+            $forceDeleted = $post->forceDelete();
             if ($forceDeleted) {
-                $this->logService->log(Auth::id(), 'force_deleted_post', post::class, $postId, null);
+                if ($post->thumbnail) {
+                    Storage::disk('s3')->delete($post->thumbnail);
+                }
+                $this->logService->log(Auth::id(), 'force_deleted_post', post::class, $postId, json_encode([
+                    'model' => get_class($post),
+                    'data' => $dataToDelete
+                ]));
             }
             return $forceDeleted;
         } catch (ModelNotFoundException $e) {

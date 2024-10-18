@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('posts', function (Blueprint $table) {
-            $table->string('content_type')->default('html')->after('description');
+        Schema::create('upload_media', function (Blueprint $table) {
+            $table->id();
+            $table->string('url', 255);
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index('url');
         });
     }
 
@@ -21,8 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('posts', function (Blueprint $table) {
-            $table->dropColumn('content_type');
-        });
+        Schema::dropIfExists('upload_media');
     }
 };
