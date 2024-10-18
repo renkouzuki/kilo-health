@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\pagination\paginating;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 
 class anotherPost extends JsonResource
 {
@@ -15,33 +16,45 @@ class anotherPost extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $media = $this->media; 
         $pagination = new paginating();
 
         return [
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
-            'content_type' => $this->content_type,
             'thumbnail' => $this->thumbnail,
             'read_time' => $this->read_time,
-            'published_at' => $this->published_at,
             'views' => $this->views,
             'likes' => $this->likes,
-            'category' => [
-                'id' => $this->category->id,
-                'name' => $this->category->name,
-                'slug' => $this->category->slug,
-            ],
-            'author' => [
-                'id' => $this->author->id,
-                'name' => $this->author->name,
-                'email' => $this->author->email,
-            ],
-            'media' => [
-                'data' => $media->items(),
-                'metadata' => $pagination->metadata($media)
-            ],
+            'published_at' => $this->published_at instanceof \Carbon\Carbon ? $this->published_at->toISOString() : null,
+            'created_at' => $this->created_at->toISOString(),
+            'updated_at' => $this->updated_at->toISOString(),
+            'category' => $this->whenLoaded('category', function () {
+                return [
+                    'id' => $this->category->id,
+                    'name' => $this->category->name,
+                    'slug' => $this->category->slug,
+                    'icon' => $this->category->icon,
+                ];
+            }),
+            'author' => $this->whenLoaded('author', function () {
+                return [
+                    'id' => $this->author->id,
+                    'name' => $this->author->name,
+                    'email' => $this->author->email,
+                    'avatar' => $this->author->avatar,
+                ];
+            }),
+            'media' => $this->whenLoaded('media' , function() use ($pagination){
+                return [
+                    'media' => $this->media,
+                    'meta' => $pagination->metadata($this->media)
+                ];
+            }),
+            'is_published' => !is_null($this->published_at) && $this->published_at instanceof \Carbon\Carbon && $this->published_at->isPast(),
+            'slug' => $this->slug ?? Str::slug($this->title),
+            'excerpt' => Str::limit(strip_tags($this->description), 150),
+            'read_time_text' => $this->read_time == 1 ? '1 minute read' : "{$this->read_time} minutes read",
         ];
     }
 }

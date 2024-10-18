@@ -34,7 +34,7 @@ class RoleController extends Controller
                 'success' => true,
                 'message' => 'Successfully retrieving roles data',
                 'data' => roles::collection($roles),
-                'metadata' => $this->pagination->metadata($roles)
+                'meta' => $this->pagination->metadata($roles)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -127,7 +127,7 @@ class RoleController extends Controller
                 'success' => true, 
                 'message' => 'Successfuly retrieving soft delete roles', 
                 'data' => roles::collection($trashedRoles),
-                'metadata'=> $this->pagination->metadata($trashedRoles)
+                'meta'=> $this->pagination->metadata($trashedRoles)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

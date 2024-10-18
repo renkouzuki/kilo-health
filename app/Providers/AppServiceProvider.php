@@ -12,6 +12,8 @@ use App\Repositories\PostViews\PostViewController;
 use App\Repositories\PostViews\PostViewInterface;
 use App\Repositories\Roles\RoleController;
 use App\Repositories\Roles\RoleInterface;
+use App\Repositories\SiteSettings\SiteSettingController;
+use App\Repositories\SiteSettings\SiteSettingInterface;
 use App\Repositories\Topics\TopicController;
 use App\Repositories\Topics\TopicInterface;
 use App\Repositories\UploadMedias\UploadMediaController;
@@ -36,6 +38,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UploadMediaInterface::class, UploadMediaController::class);
         $this->app->bind(RoleInterface::class , RoleController::class);
         $this->app->bind(PermissionInterface::class , PermissionController::class);
+        $this->app->bind(SiteSettingInterface::class  , SiteSettingController::class);
+        $this->app->bind(UploadMediaInterface::class , UploadMediaController::class);
 
         $this->app->singleton(AuditLogService::class, function ($app) {
             return new AuditLogService();

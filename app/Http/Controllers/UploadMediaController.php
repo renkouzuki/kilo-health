@@ -19,14 +19,14 @@ class UploadMediaController extends Controller
         $this->Repository = $repository;
     }
 
-    public function upload(int $postId): JsonResponse
+    public function upload(Request $req , int $postId): JsonResponse
     {
         try {
             $this->req->validate([
-                'file' => 'required|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'file.*' => 'required|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
 
-            $media = $this->Repository->uploadMedia($this->req->file('file'), $postId);
+            $media = $this->Repository->uploadMedia($this->req, $postId);
             return response()->json(['success' => true, 'message' => 'Successfully uploaded', 'media' => $media], 201);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

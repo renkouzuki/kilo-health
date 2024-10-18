@@ -34,7 +34,7 @@ class PemrissionController extends Controller
                 'success' => true, 
                 'message' => 'Successfully retrieving permissions', 
                 'data' => permissions::collection($permissions),
-                'metadata'=>$this->pagination->metadata($permissions)
+                'meta'=>$this->pagination->metadata($permissions)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -127,7 +127,7 @@ class PemrissionController extends Controller
                 'success' => true, 
                 'message' => 'Successfuly retrieving soft delete permission data', 
                 'data' => permissions::collection($trashedPermissions),
-                'metadata'=> $this->pagination->metadata($trashedPermissions)
+                'meta'=> $this->pagination->metadata($trashedPermissions)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

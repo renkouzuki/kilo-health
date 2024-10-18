@@ -35,7 +35,7 @@ class CategoryController extends Controller
                 'success' => true,
                 'message' => 'Successfully retrieving categories',
                 'data' => CategoryResource::collection($categories),
-                'metadata'=> $this->pagination->metadata($categories)
+                'meta'=> $this->pagination->metadata($categories)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error retrieving categories', 'err' => $e->getMessage()], 500);
@@ -144,7 +144,7 @@ class CategoryController extends Controller
                 'success' => true, 
                 'message' => 'Successfully retrieving soft deleted categories', 
                 'data' => CategoryResource::collection($trashedCategories),
-                'metadata'=>$this->pagination->metadata($trashedCategories)
+                'meta'=>$this->pagination->metadata($trashedCategories)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

@@ -33,7 +33,7 @@ class TopicController extends Controller
                 'success' => true, 
                 'message' => 'successfully retrieving topics data', 
                 'data' => TopicResource::collection($topics),
-                'metadata' => $this->pagination->metadata($topics)
+                'meta' => $this->pagination->metadata($topics)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -108,7 +108,7 @@ class TopicController extends Controller
                 'success' => true, 
                 'message' => 'Successfully retrieving topics', 
                 'data' => TopicResource::collection($topics),
-                'metadata' => $this->pagination->metadata($topics)
+                'meta' => $this->pagination->metadata($topics)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

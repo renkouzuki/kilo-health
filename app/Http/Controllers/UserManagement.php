@@ -39,7 +39,7 @@ class UserManagement extends Controller
                 'success' => true,
                 'message' => 'Users retrieved successfully',
                 'data' => anotheruser::collection($users),
-                'metadata' => $this->pagination->metadata($users)
+                'meta' => $this->pagination->metadata($users)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -124,7 +124,7 @@ class UserManagement extends Controller
                 'success' => true,
                 'message' => 'Soft deleted users retrieved successfully',
                 'data' => anotheruser::collection($data),
-                'metadata'=> $this->pagination->metadata($data)
+                'meta'=> $this->pagination->metadata($data)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -182,7 +182,7 @@ class UserManagement extends Controller
                 'success' => true,
                 'message' => 'Auditlog retrieved successfully',
                 'data' => auditlog::collection($users),
-                'metadata' => $this->pagination->metadata($users)
+                'meta' => $this->pagination->metadata($users)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

@@ -39,7 +39,7 @@ class PostController extends Controller
                 'success' => true,
                 'message' => 'Successfully retrieved posts',
                 'data' => PostResource::collection($posts),
-                'metada' => $this->pagination->metadata($posts)
+                'meta' => $this->pagination->metadata($posts)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -166,7 +166,7 @@ class PostController extends Controller
                 'success' => true, 
                 'message' => 'Successfully retrieving published posts', 
                 'data' => PostResource::collection($posts),
-                'metadata'=> $this->pagination->metadata($posts)
+                'meta'=> $this->pagination->metadata($posts)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -244,7 +244,7 @@ class PostController extends Controller
                 'success' => true,
                 'message' => 'Successfully retrieving trashed posts',
                 'data' => PostResource::collection($trashedPosts),
-                'metadata' => $this->pagination->metadata($trashedPosts)
+                'meta' => $this->pagination->metadata($trashedPosts)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

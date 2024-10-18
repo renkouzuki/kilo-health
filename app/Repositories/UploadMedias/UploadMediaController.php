@@ -8,7 +8,6 @@ use App\Models\upload_media;
 use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -23,19 +22,21 @@ class UploadMediaController implements UploadMediaInterface
         $this->logService = $logService;
     }
 
-    public function uploadMedia(UploadedFile $file, int $postId): upload_media
+    public function uploadMedia(Request $req , int $postId): upload_media
     {
         try {
-            $path = $file->store('post_media', 'public');
+            $data = ['post_id' => $postId];
+            if($req->hasFile('file')){
+                foreach($req->file('file') as $file){
+                    $data['url'][] = $file;
+                }
+            }
 
-            $media = upload_media::create([
-                'url' => $path,
-                'post_id' => $postId
-            ]);
+            $media = upload_media::create($data);
 
             $this->logService->log(Auth::id(), 'uploaded_media', upload_media::class, $media->id, json_encode([
                 'post_id' => $postId,
-                'url' => $path
+                'url' => $data['url'],
             ]));
             event(new MediaUploaded($media));
             return $media;
