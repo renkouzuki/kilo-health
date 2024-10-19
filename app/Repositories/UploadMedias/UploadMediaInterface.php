@@ -16,4 +16,5 @@ interface UploadMediaInterface {
     public function getMedias(string $search = null, int $perPage = 10) :LengthAwarePaginator;
     public function restore(int $mediaId):bool;
     public function forceDelete(int $mediaId):bool;
+    public function displayPostByMediaId(int $mediaId, string $search = null , int $perPage = 5): LengthAwarePaginator;
 }

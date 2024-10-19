@@ -84,9 +84,33 @@ class UploadMediaController extends Controller
         try {
             $media = $this->Repository->getMediaById($id);
             if ($media) {
-                return response()->json(['success' => true, 'message' => 'Successfully get media', 'media' => new show($media)], 200);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Successfully get media',
+                    'data' => new show($media)
+                ], 200);
             }
             return response()->json(['success' => false, 'message' => 'Media not found'], 404);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getPostByMediaId(int $id): JsonResponse
+    {
+        try {
+            $search = $this->req->search;
+            $perPage = $this->req->per_page ?? 5;
+            $post = $this->Repository->displayPostByMediaId($id, $search, $perPage);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully retrieved post',
+                'data' => $post
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

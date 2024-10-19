@@ -9,7 +9,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 interface PostInterface
 {
     public function getAllPosts(Request $req, int $perPage): LengthAwarePaginator;
-    public function getPostById( string $search = null , int $perPage = 10, int $id): ? post;
+    public function getPostById(int $id): ? post;
+    public function displayPostPhotosById(int $postId, int $perPage = 10): LengthAwarePaginator;
     public function getPostByIdForPublic(int $id): ?Post;
     public function createPost(Request $req): post;
     public function updatePost(int $id, Request $req): bool;
@@ -25,4 +26,6 @@ interface PostInterface
     public function getTrashedPosts(Request $req , int $perPage): LengthAwarePaginator;
     public function restorePost(int $postId): bool;
     public function forceDeletePost(int $postId): bool;
+    public function getRelatedPosts();
+    public function getPopularPosts();
 }

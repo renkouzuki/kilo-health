@@ -1,13 +1,12 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Post;
 
-use App\pagination\paginating;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Str;
 
-class anotherPost extends JsonResource
+class publishShow extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -16,19 +15,12 @@ class anotherPost extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $pagination = new paginating();
-
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'description' => $this->description,
-            'thumbnail' => $this->thumbnail,
-            'read_time' => $this->read_time,
+            'content' => $this->content,
             'views' => $this->views,
             'likes' => $this->likes,
-            'published_at' => $this->published_at instanceof \Carbon\Carbon ? $this->published_at->toISOString() : null,
-            'created_at' => $this->created_at->toISOString(),
-            'updated_at' => $this->updated_at->toISOString(),
             'category' => $this->whenLoaded('category', function () {
                 return [
                     'id' => $this->category->id,
@@ -45,16 +37,15 @@ class anotherPost extends JsonResource
                     'avatar' => $this->author->avatar,
                 ];
             }),
-            'media' => $this->whenLoaded('media' , function() use ($pagination){
-                return [
-                    'media' => $this->media,
-                    'meta' => $pagination->metadata($this->media)
-                ];
-            }),
-            'is_published' => !is_null($this->published_at) && $this->published_at instanceof \Carbon\Carbon && $this->published_at->isPast(),
-            'slug' => $this->slug ?? Str::slug($this->title),
-            'excerpt' => Str::limit(strip_tags($this->description), 150),
+            'published_at' => $this->getFormattedDate($this->published_at),
             'read_time_text' => $this->read_time == 1 ? '1 minute read' : "{$this->read_time} minutes read",
+            'thumbnail' => $this->thumbnail,
+            'description' => $this->description,
         ];
+    }
+
+    private function getFormattedDate($date): ?string
+    {
+        return $date ? Carbon::parse($date)->format('F d, Y') : null;
     }
 }

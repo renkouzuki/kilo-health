@@ -1,10 +1,13 @@
 1-auth
-- register and login verification system // saturday
-
-/// fix laravel resource make it look more clean by clean mean re arrange folder structures // saturday
-
-
-/// fix rollback audit log for aws part
-
+- register and login verification system tmrw
 
 /// check frontend
+
+
+/// tmrw features
+
+getRelatePosts()
+getPopularPosts()
+getPopulartopics()
+
+siteSettings() in frontend display logo and footer stuff feature here we missing

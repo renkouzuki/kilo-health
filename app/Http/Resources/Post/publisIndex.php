@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Post;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Str;
 
-class PostResource extends JsonResource
+class publisIndex extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -18,9 +17,11 @@ class PostResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'description' => $this->getShortDescription(),
             'thumbnail' => $this->thumbnail,
-            'excerpt' => Str::limit(strip_tags($this->description), 150),
             'published_at' => $this->published_at instanceof \Carbon\Carbon ? $this->published_at->toISOString() : null,
+            'is_published' => !is_null($this->published_at) && $this->published_at instanceof \Carbon\Carbon && $this->published_at->isPast(),
+            'read_time_text' => $this->read_time == 1 ? '1 minute read' : "{$this->read_time} minutes read",
             'category' => $this->whenLoaded('category', function () {
                 return [
                     'id' => $this->category->id,
@@ -37,8 +38,14 @@ class PostResource extends JsonResource
                     'avatar' => $this->author->avatar,
                 ];
             }),
-            'is_published' => !is_null($this->published_at) && $this->published_at instanceof \Carbon\Carbon && $this->published_at->isPast(),
-            'read_time_text' => $this->read_time == 1 ? '1 minute read' : "{$this->read_time} minutes read",
+            'slug' => $this->slug ?? $this->id,
         ];
+    }
+
+    private function getShortDescription(): string
+    {
+        return strlen($this->description) > 100
+            ? substr($this->description, 0, 97) . '...'
+            : $this->description;
     }
 }

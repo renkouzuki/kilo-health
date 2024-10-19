@@ -14,12 +14,12 @@ class show extends JsonResource
      */
     public function toArray(Request $request): array
     {
+
         return [
             'id'=>$this->id,
             'url'=>$this->url,
             'created_at'=>$this->created_at,
-            'updated_at'=>$this->updated_at,
-            'posts'=>$this->post
+            'updated_at'=>$this->updated_at
         ];
     }
 }

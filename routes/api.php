@@ -24,8 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/update_user', [UserManagement::class, 'UpdateUserInfo']);
     Route::get('/profile',[UserManagement::class , 'getUserDetails']);
     Route::post('/logout', [authenticate::class, 'logout']);
-    Route::get('posts', [PostController::class, 'getPublished']);
-    Route::get('posts/{id}', [PostController::class, 'publicShow']);
+    Route::get('posts', [PostController::class, 'getPublished'])->middleware('permission:view_items');
+    Route::get('posts/{id}', [PostController::class, 'publicShow'])->middleware('permission:view_items');
     Route::post('posts/{postId}/view', [PostViewController::class, 'recordView'])->middleware('permission:view_items');
     Route::post('/{id}/like', [PostController::class, 'like'])->middleware('permission:view_items');
     Route::delete('/{id}/like', [PostController::class, 'unlike'])->middleware('permission:view_items');
@@ -107,6 +107,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [PostController::class, 'index'])->middleware(['role:super_admin|admin', 'permission:view_items']);
         Route::post('/', [PostController::class, 'store'])->middleware(['role:super_admin|admin|arthur', 'permission:create_items']);
         Route::get('{id}', [PostController::class, 'show'])->middleware('permission:view_items');
+        Route::get('{id}/post_photos', [PostController::class, 'getPostPhotosById'])->middleware('role:super_admin|admin|arthur');
         Route::put('/{id}', [PostController::class, 'update'])->middleware(['role:super_admin|admin|arthur', 'permission:update_items']);
         Route::delete('{id}', [PostController::class, 'destroy'])->middleware(['role:super_admin|admin', 'permission:delete_items']);
         Route::post('{id}/restore', [PostController::class, 'restore'])->middleware(['role:super_admin|admin', 'permission:restore_items']);
@@ -129,6 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
         //Route::get('/{id}/media', [UploadMediaController::class, 'getMediaByPost'])->middleware('permission:view_items');
         Route::delete('/{id}', [UploadMediaController::class, 'deleteMedia'])->middleware(['role:super_admin|admin|arthur', 'permission:delete_items']);
         Route::get('/{id}', [UploadMediaController::class, 'getMedia'])->middleware('permission:view_items');
+        Route::get('/{id}/posts', [UploadMediaController::class, 'getPostByMediaId'])->middleware(['role:super_admin|admin|arthur']);
         Route::post('/{id}/restore', [UploadMediaController::class, 'restored'])->middleware(['role:super_admin|admin', 'permission:restore_items']);
         Route::delete('/{id}/force', [UploadMediaController::class, 'forceDeleted'])->middleware(['role:super_admin', 'permission:force_delete_items']);
     });

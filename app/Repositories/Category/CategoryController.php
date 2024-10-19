@@ -173,9 +173,7 @@ class CategoryController implements CategoryInterface
             $forceDeleted = $category->forceDelete();
 
             if ($forceDeleted) {
-                if ($category->icon) {
-                    Storage::disk('s3')->delete($category->icon);
-                }
+
                 $this->logService->log(Auth::id(), 'force_deleted_category', categorie::class, $id, json_encode([
                     'model' => get_class($category),
                     'data' => $dataToDelete

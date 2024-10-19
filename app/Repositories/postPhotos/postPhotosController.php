@@ -157,10 +157,6 @@ class postPhotosController implements postPhotosInterface
             $media = more_post_photos::withTrashed()->findOrFail($mediaId);
             $forceDeleted = $media->forceDelete();
             if ($forceDeleted) {
-                if ($media->url) {
-                    Storage::disk('s3')->delete($media->url);
-                }
-
                 $dataToDelete = [
                     'url' => $media->url,
                     'post_id' => $media->post_id,

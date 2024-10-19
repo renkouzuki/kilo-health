@@ -7,8 +7,10 @@ use App\Events\Posts\PostDeleted;
 use App\Events\Posts\PostPublished;
 use App\Events\Posts\PostUnpublished;
 use App\Events\Posts\PostUpdated;
+use App\Models\more_post_photos;
 use App\Models\post;
 use App\Models\upload_media;
+use App\pagination\paginating;
 use App\Services\AuditLogService;
 use App\Strategies\ContentStrategy;
 use App\Strategies\HtmlStrategy;
@@ -29,10 +31,12 @@ class PostController implements PostInterface
 {
 
     protected $logService;
+    protected $pagination;
 
     public function __construct(AuditLogService $logService)
     {
         $this->logService = $logService;
+        $this->pagination = new paginating();
     }
 
     public function getAllPosts(Request $req, int $perPage): LengthAwarePaginator
@@ -40,7 +44,12 @@ class PostController implements PostInterface
         try {
             $filters = $req->only(['search', 'category_id', 'author_id']);
 
-            $query = post::with(['category', 'author'])
+            $query = Post::query()
+                ->select('posts.id', 'posts.title', 'posts.thumbnail', 'posts.published_at', 'posts.views', 'posts.likes', 'posts.created_at', 'posts.category_id', 'posts.author_id')
+                ->with([
+                    'category:id,name',
+                    'author:id,name'
+                ])
                 ->when($filters['search'] ?? null, function ($query, $search) {
                     return $query->where('title', 'like', '%' . $search . '%')
                         ->orWhere('description', 'like', '%' . $search . '%');
@@ -50,8 +59,7 @@ class PostController implements PostInterface
                 })
                 ->when($filters['author_id'] ?? null, function ($query, $authorId) {
                     return $query->where('author_id', $authorId);
-                })
-                ->orderBy('created_at', 'desc');
+                });
 
             return $query->latest()->paginate($perPage);
         } catch (Exception $e) {
@@ -60,16 +68,22 @@ class PostController implements PostInterface
         }
     }
 
-    public function getPostById(string $search = null, int $perPage = 10, int $id): ?Post //// this one is for edit in backend admin
+    public function getPostById(int $id): ?Post //// this one is for edit in backend admin
     {
         try {
-            $post = post::with(['category', 'author'])->findOrFail($id);
+            return post::with(['category', 'author'])->findOrFail($id);
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Post not found');
+        } catch (Exception $e) {
+            Log::error('Error retrieving post: ' . $e->getMessage());
+            throw new Exception('Error retrieving post');
+        }
+    }
 
-            $media = $post->uploadMedia()->paginate($perPage);
-
-            $post->media = $media;
-
-            return $post;
+    public function displayPostPhotosById(int $postId, int $perPage = 10): LengthAwarePaginator
+    {
+        try {
+            return more_post_photos::where('post_id', $postId)->select('id', 'url')->latest()->paginate($perPage);
         } catch (ModelNotFoundException $e) {
             throw new Exception('Post not found');
         } catch (Exception $e) {
@@ -81,9 +95,26 @@ class PostController implements PostInterface
     public function getPostByIdForPublic(int $id): ?Post /// for public use
     {
         try {
-            return Post::whereNotNull('published_at')
+            return Post::select([
+                'id',
+                'title',
+                'description',
+                'content_type',
+                'content',
+                'category_id',
+                'author_id',
+                'thumbnail',
+                'read_time',
+                'published_at',
+                'views',
+                'likes'
+            ])
+                ->whereNotNull('published_at')
                 ->where('published_at', '<=', Carbon::now())
-                ->with(['category', 'author'])
+                ->with([
+                    'category:id,name,slug',
+                    'author:id,name,avatar',
+                ])
                 ->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             throw new Exception('Post not found');
@@ -98,29 +129,30 @@ class PostController implements PostInterface
         try {
 
             $strategy = $this->getContentStrategy($req->content_type);
-            $formattedContent = $strategy->formatContent($req->description);
+            $formattedContent = $strategy->formatContent($req->content);
 
             $data = [
                 'title' => $req->title,
-                'description' => $formattedContent,
+                'description' => $req->description,
+                'content' => $formattedContent,
                 'category_id' => $req->category_id,
                 'author_id' => $req->user()->id,
-                'content_type' => $req->content_type
+                'content_type' => $req->content_type,
+                'upload_media_id' => null,
             ];
 
-            $thumbnailMediaId = null;
             if ($req->hasFile('thumbnail')) {
                 $data['thumbnail'] = $req->file('thumbnail')->store('post-thumbnails', 's3');
 
                 $thumbnailMediaId = upload_media::create([
                     'url' => $data['thumbnail']
                 ])->id;
+
+                $data['upload_media_id'] = $thumbnailMediaId;
             }
 
-            $data['upload_media_id'] = $thumbnailMediaId;
-
             return DB::transaction(function () use ($data, $req) {
-                $data['read_time'] = $this->calculateReadTime($req->description);
+                $data['read_time'] = $this->calculateReadTime($req->content);
                 $post = post::create($data);
                 $this->logService->log(Auth::id(), 'created_post', post::class, $post->id, json_encode($data));
                 event(new PostCreated($post));
@@ -138,10 +170,10 @@ class PostController implements PostInterface
             return DB::transaction(function () use ($id, $req) {
                 $post = post::findOrFail($id);
 
-                $data = $req->only(['title', 'description', 'category_id', 'content_type', 'thumbnail']);
+                $data = $req->only(['title', 'description', 'content', 'category_id', 'content_type', 'thumbnail']);
 
-                if ($req->has('description')) {
-                    $postData['read_time'] = $this->calculateReadTime($req->description);
+                if ($req->has('content')) {
+                    $postData['read_time'] = $this->calculateReadTime($req->content);
                 }
 
                 if ($req->hasFile('thumbnail')) {
@@ -317,10 +349,23 @@ class PostController implements PostInterface
     public function getPublishedPosts(Request $req, int $perPage): LengthAwarePaginator
     {
         try {
-            $query = post::query()
+            $query = Post::query()
+                ->select([
+                    'posts.id',
+                    'posts.title',
+                    'posts.description',
+                    'posts.thumbnail',
+                    'posts.published_at',
+                    'posts.read_time',
+                    'posts.category_id',
+                    'posts.author_id',
+                ])
                 ->whereNotNull('published_at')
                 ->where('published_at', '<=', Carbon::now())
-                ->with(['category', 'author']);
+                ->with([
+                    'category:id,name,slug',
+                    'author:id,name'
+                ]);
 
             $this->applyFilters($query, $req);
             $this->applySorting($query, $req);
@@ -370,6 +415,7 @@ class PostController implements PostInterface
                 'id' => $post->id,
                 'title' => $post->title,
                 'description' => $post->description,
+                'content' => $post->content,
                 'category_id' => $post->category_id,
                 'author_id' => $post->author_id,
                 'upload_media_id' => $post->upload_media_id,
@@ -382,9 +428,6 @@ class PostController implements PostInterface
 
             $forceDeleted = $post->forceDelete();
             if ($forceDeleted) {
-                if ($post->thumbnail) {
-                    Storage::disk('s3')->delete($post->thumbnail);
-                }
                 $this->logService->log(Auth::id(), 'force_deleted_post', post::class, $postId, json_encode([
                     'model' => get_class($post),
                     'data' => $dataToDelete

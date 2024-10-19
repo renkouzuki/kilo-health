@@ -17,4 +17,5 @@ interface TopicInterface {
     public function restoreTopic(int $id): bool;
     public function forceDeleteTopic(int $id): bool;
     public function getTrashedTopics(string $search = null, int $perPage = 10): LengthAwarePaginator;
+    public function getPopularTopics();
 }

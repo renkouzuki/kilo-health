@@ -127,9 +127,9 @@ class SiteSettingController implements SiteSettingInterface
             $deleted = $setting->delete();
 
             if ($deleted) {
-                if ($setting->input_type == 'image' && $setting->value) {
-                    Storage::disk('s3')->delete($setting->value);
-                }
+                //if ($setting->input_type == 'image' && $setting->value) {
+                //    Storage::disk('s3')->delete($setting->value);
+                //} haven't implement a bucket versioning yet
 
                 $this->logService->log(Auth::id(), 'deleted_setting', site_setting::class, $setting->id, json_encode([
                     'model' => get_class($setting),

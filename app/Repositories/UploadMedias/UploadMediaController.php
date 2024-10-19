@@ -4,11 +4,12 @@ namespace App\Repositories\UploadMedias;
 
 use App\Events\Posts\MediaDeleted;
 use App\Events\Posts\MediaUploaded;
+use App\Models\post;
 use App\Models\upload_media;
+use App\pagination\paginating;
 use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,10 +20,12 @@ class UploadMediaController implements UploadMediaInterface
 {
 
     protected $logService;
+    protected $pagination;
 
     public function __construct(AuditLogService $logService)
     {
         $this->logService = $logService;
+        $this->pagination = new paginating();
     }
 
     public function getMedias(?string $search = null, int $perPage = 10): LengthAwarePaginator
@@ -82,7 +85,28 @@ class UploadMediaController implements UploadMediaInterface
     public function getMediaById(int $mediaId): ?upload_media
     {
         try {
-            return upload_media::findOrFail($mediaId)->load(['post']);
+            return upload_media::findOrFail($mediaId);
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Media not found');
+        } catch (Exception $e) {
+            Log::error('Error retrieving media: ' . $e->getMessage());
+            throw new Exception('Error retrieving media');
+        }
+    }
+
+    public function displayPostByMediaId(int $mediaId, string $search = null, int $perPage = 5): LengthAwarePaginator
+    {
+        try {
+            return post::where('upload_media_id', $mediaId)->select('id', 'title', 'description', 'thumbnail')->when(
+                $search ?? null,
+                fn($query, $search) =>
+                $query->where(
+                    fn($q) =>
+                    $q->where('title', 'LIKE', "%{$search}%")
+                )
+            )->latest()->paginate($perPage);
+        } catch (ModelNotFoundException) {
+            throw new Exception('Media not found');
         } catch (Exception $e) {
             Log::error('Error retrieving media: ' . $e->getMessage());
             throw new Exception('Error retrieving media');
@@ -156,10 +180,6 @@ class UploadMediaController implements UploadMediaInterface
             $forceDeleted = $uploadmedia->forceDelete();
 
             if ($forceDeleted) {
-                if ($uploadmedia->url) {
-                    Storage::disk('s3')->delete($uploadmedia->url);
-                }
-
                 $this->logService->log(Auth::id(), 'force_deleted_media', upload_media::class, $mediaId, json_encode([
                     'model' => get_class($uploadmedia),
                     'data' => $dataToDelete,
