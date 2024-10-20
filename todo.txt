@@ -1,4 +1,2 @@
 ///
 - register and login verification system
-
-dashboard analytics

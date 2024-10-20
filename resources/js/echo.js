@@ -14,6 +14,6 @@ window.Echo = new Echo({
 });
 
 
-window.Echo.channel('my-channel').listen('.App\\Events\\testing', (e) => {
+window.Echo.channel('posts').listen('.App\\Events\\Posts\\PostCreated', (e) => {
     console.log(e);
 });

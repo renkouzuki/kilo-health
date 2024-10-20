@@ -46,7 +46,7 @@ class PostController implements PostInterface
             $filters = $req->only(['search', 'category_id', 'author_id']);
 
             $query = Post::query()
-                ->select('posts.id', 'posts.title', 'posts.thumbnail', 'posts.published_at', 'posts.views', 'posts.likes', 'posts.created_at', 'posts.category_id', 'posts.author_id')
+                ->select('posts.id', 'posts.title' , 'posts.description' , 'posts.thumbnail', 'posts.published_at', 'posts.views', 'posts.likes', 'posts.created_at', 'posts.category_id', 'posts.author_id')
                 ->with([
                     'category:id,name',
                     'author:id,name'
