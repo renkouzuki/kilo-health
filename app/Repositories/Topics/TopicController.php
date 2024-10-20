@@ -7,10 +7,12 @@ use App\Events\Topics\TopicDeleted;
 use App\Events\Topics\TopicUpdated;
 use App\Models\topic;
 use App\Services\AuditLogService;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TopicController implements TopicInterface
@@ -35,6 +37,33 @@ class TopicController implements TopicInterface
                     )
                 )
                 ->latest()->paginate($perPage);
+        } catch (Exception $e) {
+            Log::error('Database error: ' . $e->getMessage());
+            throw new Exception('Error retrieving topics');
+        }
+    }
+
+    public function getPopularTopics(int $perPage = 10, int $days = 30): LengthAwarePaginator
+    {
+        try {
+            return topic::select([
+                'topics.id',
+                'topics.name',
+                'categories.name as category_name',
+                'categories.slug as category_slug',
+                'categories.icon as category_icon',
+                DB::raw('COUNT(DISTINCT posts.id) as posts_count')
+            ])->join('categories', 'topics.category_id', '=', 'categories.id')
+                ->leftJoin('posts', function ($join) {
+                    $join->on('posts.category_id', '=', 'categories.id')
+                        ->whereNull('posts.deleted_at');
+                })
+                ->where('posts.published_at', '<=', Carbon::now())
+                ->where('posts.published_at', '>=', Carbon::now()->subDays($days))
+                ->groupBy('topics.id', 'topics.name', 'categories.name', 'categories.slug', 'categories.icon')
+                ->havingRaw('COUNT(DISTINCT posts.id) > 0')
+                ->orderByDesc('posts_count')
+                ->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error retrieving topics');

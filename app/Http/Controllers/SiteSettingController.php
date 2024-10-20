@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\SiteSettings\SiteSettingInterface;
+use App\Services\SiteSettingsService;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -14,10 +15,13 @@ class SiteSettingController extends Controller
 
     protected $Repository;
 
-    public function __construct(SiteSettingInterface $repository, Request $req)
+    protected $siteSettingsService;
+
+    public function __construct(SiteSettingInterface $repository, Request $req, SiteSettingsService $siteSettingsService)
     {
         $this->req = $req;
         $this->Repository = $repository;
+        $this->siteSettingsService = $siteSettingsService;
     }
 
     public function index(): JsonResponse
@@ -95,6 +99,29 @@ class SiteSettingController extends Controller
                 return response()->json(['message' => 'Setting not found'], 404);
             }
             return response()->json(['success' => true, 'message' => 'Failed to delete setting'], 204);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function homepageSettings(): JsonResponse
+    {
+        try {
+            $settings = $this->siteSettingsService->getAllSettings();
+            return response()->json(['success' => true, 'data' => $settings]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function homepageSetting(string $key): JsonResponse
+    {
+        try {
+            $value = $this->siteSettingsService->getSetting($key);
+            if ($value === null) {
+                return response()->json(['message' => 'Setting not found'], 404);
+            }
+            return response()->json(['success' => true, 'data' => [$key => $value]]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

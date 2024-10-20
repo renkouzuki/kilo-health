@@ -25,11 +25,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile',[UserManagement::class , 'getUserDetails']);
     Route::post('/logout', [authenticate::class, 'logout']);
     Route::get('posts', [PostController::class, 'getPublished'])->middleware('permission:view_items');
+    Route::get('popular/posts', [PostController::class , 'popularPosts'])->middleware('permission:view_items');
     Route::get('posts/{id}', [PostController::class, 'publicShow'])->middleware('permission:view_items');
     Route::post('posts/{postId}/view', [PostViewController::class, 'recordView'])->middleware('permission:view_items');
     Route::post('/{id}/like', [PostController::class, 'like'])->middleware('permission:view_items');
     Route::delete('/{id}/like', [PostController::class, 'unlike'])->middleware('permission:view_items');
-
+    Route::get('/popular/topics' , [TopicController::class , 'popularTopics'])->middleware('permission:view_items');
+    Route::get('/allsettings' , [SiteSettingController::class , 'homepageSettings'])->middleware('permission:view_items');
+    Route::get('/setting/{key}' , [SiteSettingController::class , 'homepageSetting'])->middleware('permission:view_items');
 
     Route::get('/testView', function () {
         $test = new SwitchMe();

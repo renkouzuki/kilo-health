@@ -18,6 +18,7 @@ use App\Strategies\MarkdownStrategy;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -65,6 +66,65 @@ class PostController implements PostInterface
         } catch (Exception $e) {
             Log::error('Error retrieving posts: ' . $e->getMessage());
             throw new Exception('Error retrieving posts');
+        }
+    }
+
+    public function getRelatedPosts(post $post, int $limit = 3): Collection
+    {
+        try {
+            return post::select([
+                'posts.id',
+                'posts.title',
+                'posts.description',
+                'posts.thumbnail',
+                'posts.published_at',
+                'posts.read_time',
+                'posts.category_id',
+                'posts.author_id',
+            ])->with([
+                'category:id,name,slug',
+                'author:id,name'
+            ])->where('category_id', $post->category_id)
+                ->where('id', '!=', $post->id)
+                ->whereNotNull('published_at')
+                ->where('published_at', '<=', Carbon::now())
+                ->latest()
+                ->take($limit)
+                ->get();
+        } catch (Exception $e) {
+            Log::error('Error retrieving related posts: ' . $e->getMessage());
+            throw new Exception('Error retrieving related posts');
+        }
+    }
+
+    public function getPopularPosts(int $limit = 10, int $days = 30): Collection
+    {
+        try {
+            $startDate = Carbon::now()->subDays($days);
+
+            return Post::select([
+                'posts.id',
+                'posts.title',
+                'posts.description',
+                'posts.thumbnail',
+                'posts.published_at',
+                'posts.read_time',
+                'posts.category_id',
+                'posts.author_id',
+            ])->with([
+                'category:id,name,slug',
+                'author:id,name'
+            ])
+                ->whereNotNull('published_at')
+                ->where('published_at', '<=', Carbon::now())
+                ->where('published_at', '>=', $startDate)
+                ->orderBy('views', 'desc')
+                ->orderBy('likes', 'desc')
+                ->take($limit)
+                ->get();
+        } catch (Exception $e) {
+            Log::error('Error retrieving popular posts: ' . $e->getMessage());
+            throw new Exception('Error retrieving popular posts');
         }
     }
 

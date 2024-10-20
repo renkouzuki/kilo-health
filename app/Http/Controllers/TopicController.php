@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\TopicResource;
+use App\Http\Resources\Topics\popularTopic;
 use App\pagination\paginating;
 use App\Repositories\Topics\TopicInterface;
 use Exception;
@@ -30,8 +31,8 @@ class TopicController extends Controller
         try {
             $topics = $this->Repository->getAllTopics();
             return response()->json([
-                'success' => true, 
-                'message' => 'successfully retrieving topics data', 
+                'success' => true,
+                'message' => 'successfully retrieving topics data',
                 'data' => TopicResource::collection($topics),
                 'meta' => $this->pagination->metadata($topics)
             ], 200);
@@ -64,6 +65,22 @@ class TopicController extends Controller
             return response()->json(['success' => false, 'message' => 'Topic not found'], 404);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error retrieving topic', 'err' => $e->getMessage()], 500);
+        }
+    }
+
+    public function popularTopics(): JsonResponse
+    {
+        try {
+            $topics = $this->Repository->getPopularTopics(10, 30);
+            return response()->json([
+                'success' => true, 
+                'message' => 
+                'Successfully retrieved popular topics', 
+                'data' => popularTopic::collection($topics),
+                'meta' => $this->pagination->metadata($topics)
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
@@ -103,10 +120,10 @@ class TopicController extends Controller
             $search = $this->req->search;
             $perPage = $this->req->per_page ?? 1;
 
-            $topics = $this->Repository->getTopicsByCategory($search , $perPage ,$categoryId);
+            $topics = $this->Repository->getTopicsByCategory($search, $perPage, $categoryId);
             return response()->json([
-                'success' => true, 
-                'message' => 'Successfully retrieving topics', 
+                'success' => true,
+                'message' => 'Successfully retrieving topics',
                 'data' => TopicResource::collection($topics),
                 'meta' => $this->pagination->metadata($topics)
             ], 200);
@@ -147,10 +164,10 @@ class TopicController extends Controller
         try {
             $trashedCategories = $this->Repository->getTrashedTopics($search, $perPage);
             return response()->json([
-                'success' => true, 
-                'message' => 'Successfully retrieving soft deleted topic', 
+                'success' => true,
+                'message' => 'Successfully retrieving soft deleted topic',
                 'data' => TopicResource::collection($trashedCategories),
-                'metadata'=>$this->pagination->metadata($trashedCategories)
+                'metadata' => $this->pagination->metadata($trashedCategories)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

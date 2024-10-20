@@ -9,6 +9,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -110,7 +111,7 @@ class SiteSettingController implements SiteSettingInterface
     public function deleteSetting(string $key): bool
     {
         try {
-            
+
             $setting = site_setting::where('key', $key)->first();
             if (!$setting) {
                 return false;
@@ -141,6 +142,44 @@ class SiteSettingController implements SiteSettingInterface
         } catch (Exception $e) {
             Log::error('Error deleting setting: ' . $e->getMessage());
             throw new Exception('Error deleting setting');
+        }
+    }
+
+    public function findByKey(string $key): ?array
+    {
+        try {
+            return Cache::remember('site_setting_' . $key, 3600, function () use ($key) {
+                $setting = site_setting::where('key', $key)->first();
+                if (!$setting) {
+                    return null;
+                }
+                return [
+                    'key' => $setting->key,
+                    'value' => $setting->value,
+                    'input_type' => $setting->input_type
+                ];
+            });
+        } catch (Exception $e) {
+            Log::error('Error finding setting by key: ' . $e->getMessage());
+            throw new Exception('Error finding setting by key');
+        }
+    }
+
+    public function getSettings(): array
+    {
+        try {
+            return Cache::remember('all_site_settings', 3600, function () {
+                return site_setting::all()->map(function ($setting) {
+                    return [
+                        'key' => $setting->key,
+                        'value' => $setting->value,
+                        'input_type' => $setting->input_type
+                    ];
+                })->keyBy('key')->toArray();
+            });
+        } catch (Exception $e) {
+            Log::error('Error finding setting by key: ' . $e->getMessage());
+            throw new Exception('Error finding setting by key');
         }
     }
 }

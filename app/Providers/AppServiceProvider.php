@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Repositories\Category\CategoryController;
 use App\Repositories\Category\CategoryInterface;
+use App\Repositories\Dashboard\dashbControlller;
+use App\Repositories\Dashboard\dashbInterface;
 use App\Repositories\Permissions\PermissionController;
 use App\Repositories\Permissions\PermissionInterface;
 use App\Repositories\postPhotos\postPhotosController;
@@ -43,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SiteSettingInterface::class  , SiteSettingController::class);
         $this->app->bind(UploadMediaInterface::class , UploadMediaController::class);
         $this->app->bind(postPhotosInterface::class , postPhotosController::class);
+        $this->app->bind(dashbInterface::class , dashbControlller::class);
 
         $this->app->singleton(AuditLogService::class, function ($app) {
             return new AuditLogService();

@@ -13,4 +13,6 @@ interface SiteSettingInterface
     public function updateSetting(string $key, Request $req): bool;
     public function createSetting(Request $req): site_setting;
     public function deleteSetting(string $key): bool;
+    public function findByKey(string $key): ?array;
+    public function getSettings(): array;
 }

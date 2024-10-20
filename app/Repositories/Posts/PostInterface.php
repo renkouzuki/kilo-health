@@ -3,13 +3,14 @@
 namespace App\Repositories\Posts;
 
 use App\Models\post;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface PostInterface
 {
     public function getAllPosts(Request $req, int $perPage): LengthAwarePaginator;
-    public function getPostById(int $id): ? post;
+    public function getPostById(int $id): ?post;
     public function displayPostPhotosById(int $postId, int $perPage = 10): LengthAwarePaginator;
     public function getPostByIdForPublic(int $id): ?Post;
     public function createPost(Request $req): post;
@@ -22,10 +23,10 @@ interface PostInterface
     public function getLikesCount(int $postId): int;
     public function publishPost(int $postId): bool;
     public function unpublishPost(int $postId): bool;
-    public function getPublishedPosts(Request $req , int $perPage): LengthAwarePaginator;
-    public function getTrashedPosts(Request $req , int $perPage): LengthAwarePaginator;
+    public function getPublishedPosts(Request $req, int $perPage): LengthAwarePaginator;
+    public function getTrashedPosts(Request $req, int $perPage): LengthAwarePaginator;
     public function restorePost(int $postId): bool;
     public function forceDeletePost(int $postId): bool;
-    public function getRelatedPosts();
-    public function getPopularPosts();
+    public function getRelatedPosts(Post $post, int $limit = 3): Collection;
+    public function getPopularPosts(int $limit = 10 , int $days = 30): Collection;
 }

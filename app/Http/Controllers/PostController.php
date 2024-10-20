@@ -82,6 +82,19 @@ class PostController extends Controller
         }
     }
 
+    public function popularPosts()
+    {
+        try {
+            $popularPosts = $this->Repository->getPopularPosts(10, 30);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully retrieved popular posts', 
+                'data' => publisIndex::collection($popularPosts)
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 
     public function show(int $id): JsonResponse
     {
@@ -101,18 +114,19 @@ class PostController extends Controller
         }
     }
 
-    public function getPostPhotosById(int $id): JsonResponse {
+    public function getPostPhotosById(int $id): JsonResponse
+    {
         $perPage = $this->req->per_page ?? 5;
-        try{
-            $photos = $this->Repository->displayPostPhotosById($id , $perPage);
+        try {
+            $photos = $this->Repository->displayPostPhotosById($id, $perPage);
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieved photos',
                 'data' => $photos
             ], 200);
-        }catch(ModelNotFoundException $e){
+        } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        } catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -121,12 +135,16 @@ class PostController extends Controller
     {
         try {
             $post = $this->Repository->getPostByIdForPublic($id);
+            $relatedPosts = $this->Repository->getRelatedPosts($post);
             $strategy = $this->getContentStrategy($post->content_type);
             $post->rendered_content = $strategy->renderContent($post->content);
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieved post',
-                'data' => new publishShow($post)
+                'data' => [
+                    'post' => new publishShow($post),
+                    'related_posts' => publisIndex::collection($relatedPosts)
+                ]
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);

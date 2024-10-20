@@ -1,13 +1,4 @@
-1-auth
-- register and login verification system tmrw
+///
+- register and login verification system
 
-/// check frontend
-
-
-/// tmrw features
-
-getRelatePosts()
-getPopularPosts()
-getPopulartopics()
-
-siteSettings() in frontend display logo and footer stuff feature here we missing
+dashboard analytics
