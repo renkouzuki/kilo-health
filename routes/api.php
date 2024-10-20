@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\testing;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\Auth\authenticate;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PemrissionController;
@@ -42,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ]);
     });
 
+    Route::get('/dashboard' , [AnalyticsController::class , 'getDashboardAnalytics'])->middleware('role:super_admin|admin');
     Route::prefix('users')->group(function () {
         Route::get('/', [UserManagement::class, 'ShowAll'])->middleware(['role:super_admin|admin', 'permission:view_users']);
         Route::get('/trashed', [UserManagement::class, 'ShowTrashUsers'])->middleware(['role:super_admin', 'permission:view_delete_users']);
