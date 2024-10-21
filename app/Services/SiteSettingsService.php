@@ -3,9 +3,13 @@
 namespace App\Services;
 
 use App\Repositories\SiteSettings\SiteSettingInterface;
+use App\Traits\getFullThumbnailUrl;
+use Illuminate\Support\Facades\Log;
 
 class SiteSettingsService
 {
+
+    use getFullThumbnailUrl;
 
     protected $Repository;
 
@@ -23,6 +27,7 @@ class SiteSettingsService
     public function getAllSettings(): array
     {
         $settings = $this->Repository->getSettings();
+        Log::info('All settings: ' . json_encode($settings));
         return array_map([$this, 'formatSettingValue'], $settings);
     }
 
@@ -34,7 +39,7 @@ class SiteSettingsService
             case 'number':
                 return is_numeric($setting['value']) ? (float) $setting['value'] : $setting['value'];
             case 'image':
-                return asset('storage/' . $setting['value']);
+                return $this->getThisUrl($setting['value']);
             default:
                 return $setting['value'];
         }

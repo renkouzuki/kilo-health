@@ -30,7 +30,7 @@ class CategoryController implements CategoryInterface
     public function getAllCategories(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            return categorie::query()
+            return categorie::withCount(['topics'])
                 ->when(
                     $search ?? null,
                     fn($query, $search) =>
@@ -191,7 +191,7 @@ class CategoryController implements CategoryInterface
     public function getTrashedCategories(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            return categorie::onlyTrashed()->when(
+            return categorie::withCount(['topics'])->onlyTrashed()->when(
                 $search ?? null,
                 fn($query, $search) =>
                 $query->where(

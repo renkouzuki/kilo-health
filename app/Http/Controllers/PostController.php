@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\Post\publishShow;
 use App\Http\Resources\Post\publisIndex;
 use App\Http\Resources\Posts\index;
+use App\Http\Resources\Posts\post_photo;
 use App\Http\Resources\Posts\show;
 use App\Models\post;
 use App\pagination\paginating;
@@ -122,7 +123,8 @@ class PostController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieved photos',
-                'data' => $photos
+                'data' => post_photo::collection($photos),
+                'meta' => $this->pagination->metadata($photos)
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
@@ -163,6 +165,7 @@ class PostController extends Controller
                 'category_id' => 'sometimes|required|exists:categories,id',
                 'thumbnail' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'content_type' => 'sometimes|required|in:markdown,html',
+                'upload_media_id' => 'sometimes|required|exists:upload_media,id',
             ]);
 
             $post = post::findorfail($id);

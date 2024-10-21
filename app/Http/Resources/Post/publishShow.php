@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Post;
 
+use App\Traits\getFullThumbnailUrl;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -13,6 +14,8 @@ class publishShow extends JsonResource
      *
      * @return array<string, mixed>
      */
+    use getFullThumbnailUrl;
+
     public function toArray(Request $request): array
     {
         return [
@@ -26,7 +29,7 @@ class publishShow extends JsonResource
                     'id' => $this->category->id,
                     'name' => $this->category->name,
                     'slug' => $this->category->slug,
-                    'icon' => $this->category->icon,
+                    'icon' => $this->getThisUrl($this->category->icon),
                 ];
             }),
             'author' => $this->whenLoaded('author', function () {
@@ -34,12 +37,12 @@ class publishShow extends JsonResource
                     'id' => $this->author->id,
                     'name' => $this->author->name,
                     'email' => $this->author->email,
-                    'avatar' => $this->author->avatar,
+                    'avatar' => $this->author->avatar ? $this->getThisUrl($this->author->avatar) : "https://pbs.twimg.com/media/Fl14K6KaAAQ_OgI?format=jpg&name=large",
                 ];
             }),
             'published_at' => $this->getFormattedDate($this->published_at),
             'read_time_text' => $this->read_time == 1 ? '1 minute read' : "{$this->read_time} minutes read",
-            'thumbnail' => $this->thumbnail,
+            'thumbnail' => $this->getThisUrl($this->thumbnail),
             'description' => $this->description,
         ];
     }

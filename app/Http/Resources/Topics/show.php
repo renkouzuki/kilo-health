@@ -6,7 +6,7 @@ use App\Traits\getFullThumbnailUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class popularTopic extends JsonResource
+class show extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -20,10 +20,15 @@ class popularTopic extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'category_name' => $this->category_name,
-            'category_slug' => $this->category_slug,
-            'category_icon' => $this->getThisUrl($this->category_icon),
-            'post_count' => $this->posts_count
+            'category_id' => $this->categorie_id,
+            'category' => $this->whenLoaded('categorie', function () {
+                return [
+                    'id' => $this->categorie->id,
+                    'name' => $this->categorie->name,
+                    'icon' => $this->getThisUrl($this->categorie->icon),
+                    'slug' => $this->categorie->slug
+                ];
+            })
         ];
     }
 }

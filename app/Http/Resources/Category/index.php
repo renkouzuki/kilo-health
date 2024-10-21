@@ -1,24 +1,28 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Category;
 
+use App\Traits\getFullThumbnailUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class TopicResource extends JsonResource
+class index extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
      */
+    use getFullThumbnailUrl;
+
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'category_id' => $this->category_id,
-            'category' => new CategoryResource($this->whenLoaded('category'))
+            'slug' => $this->slug,
+            'icon' => $this->getThisUrl($this->icon),
+            'topics_count' => $this->topics_count
         ];
     }
 }

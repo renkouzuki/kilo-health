@@ -1,27 +1,25 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Posts;
 
+use App\Traits\getFullThumbnailUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class CategoryResource extends JsonResource
+class post_photo extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
      * @return array<string, mixed>
      */
+    use getFullThumbnailUrl;
+
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
-            'slug' => $this->slug,
-            'icon' => $this->icon,
-            'topics_count' => $this->whenLoaded('topics', function () {
-                return $this->topics->count();
-            }),
+            'url' => $this->getThisUrl($this->url)
         ];
     }
 }

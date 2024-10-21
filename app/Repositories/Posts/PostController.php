@@ -43,7 +43,7 @@ class PostController implements PostInterface
     public function getAllPosts(Request $req, int $perPage): LengthAwarePaginator
     {
         try {
-            $filters = $req->only(['search', 'category_id', 'author_id']);
+            $filters = $req->only(['search', 'categorie_id', 'author_id']);
 
             $query = Post::query()
                 ->select('posts.id', 'posts.title' , 'posts.description' , 'posts.thumbnail', 'posts.published_at', 'posts.views', 'posts.likes', 'posts.created_at', 'posts.category_id', 'posts.author_id')
@@ -55,8 +55,8 @@ class PostController implements PostInterface
                     return $query->where('title', 'like', '%' . $search . '%')
                         ->orWhere('description', 'like', '%' . $search . '%');
                 })
-                ->when($filters['category_id'] ?? null, function ($query, $categoryId) {
-                    return $query->where('category_id', $categoryId);
+                ->when($filters['categorie_id'] ?? null, function ($query, $categoryId) {
+                    return $query->where('categorie_id', $categoryId);
                 })
                 ->when($filters['author_id'] ?? null, function ($query, $authorId) {
                     return $query->where('author_id', $authorId);
@@ -82,8 +82,8 @@ class PostController implements PostInterface
                 'posts.category_id',
                 'posts.author_id',
             ])->with([
-                'category:id,name,slug',
-                'author:id,name'
+                'category:id,name,slug,icon',
+                'author:id,name,email,avatar'
             ])->where('category_id', $post->category_id)
                 ->where('id', '!=', $post->id)
                 ->whereNotNull('published_at')
@@ -112,8 +112,8 @@ class PostController implements PostInterface
                 'posts.category_id',
                 'posts.author_id',
             ])->with([
-                'category:id,name,slug',
-                'author:id,name'
+                'category:id,name,slug,icon',
+                'author:id,name,email,avatar'
             ])
                 ->whereNotNull('published_at')
                 ->where('published_at', '<=', Carbon::now())
@@ -172,8 +172,8 @@ class PostController implements PostInterface
                 ->whereNotNull('published_at')
                 ->where('published_at', '<=', Carbon::now())
                 ->with([
-                    'category:id,name,slug',
-                    'author:id,name,avatar',
+                    'category:id,name,slug,icon',
+                    'author:id,name,email,avatar',
                 ])
                 ->findOrFail($id);
         } catch (ModelNotFoundException $e) {
@@ -230,7 +230,7 @@ class PostController implements PostInterface
             return DB::transaction(function () use ($id, $req) {
                 $post = post::findOrFail($id);
 
-                $data = $req->only(['title', 'description', 'content', 'category_id', 'content_type', 'thumbnail']);
+                $data = $req->only(['title', 'description', 'content', 'category_id', 'content_type', 'thumbnail' , 'upload_media_id']);
 
                 if ($req->has('content')) {
                     $postData['read_time'] = $this->calculateReadTime($req->content);
@@ -423,8 +423,8 @@ class PostController implements PostInterface
                 ->whereNotNull('published_at')
                 ->where('published_at', '<=', Carbon::now())
                 ->with([
-                    'category:id,name,slug',
-                    'author:id,name'
+                    'category:id,name,slug,icon',
+                    'author:id,name,email,avatar'
                 ]);
 
             $this->applyFilters($query, $req);

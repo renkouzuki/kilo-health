@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\PostViews\post;
+use App\Http\Resources\PostViews\user;
+use App\pagination\paginating;
 use App\Repositories\PostViews\PostViewInterface;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -13,10 +16,13 @@ class PostViewController extends Controller
 
     protected $Repository;
 
+    protected $pagination;
+
     public function __construct(PostViewInterface $repository, Request $req)
     {
         $this->req = $req;
         $this->Repository = $repository;
+        $this->pagination = new paginating();
     }
 
     public function recordView(int $postId): JsonResponse
@@ -43,8 +49,15 @@ class PostViewController extends Controller
     public function getViewsByPost(int $postId): JsonResponse
     {
         try {
-            $views = $this->Repository->getViewsByPost($postId);
-            return response()->json(['success' => true, 'message' => 'Successfully get views', 'views' => $views], 200);
+            $search = $this->req->search;
+            $perPage = $this->req->per_page ?? 10;
+            $views = $this->Repository->getViewsByPost($postId , $search , $perPage);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully get views', 
+                'data' => post::collection($views),
+                'meta' => $this->pagination->metadata($views)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -53,8 +66,15 @@ class PostViewController extends Controller
     public function getViewsByUser(int $userId): JsonResponse
     {
         try {
-            $views = $this->Repository->getViewsByUser($userId);
-            return response()->json(['success' => true, 'message' => 'Successfully get view by user', 'views' => $views], 200);
+            $search = $this->req->search;
+            $perPage = $this->req->per_page ?? 10;
+            $views = $this->Repository->getViewsByUser($userId , $search , $perPage);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully get view by user', 
+                'data' => user::collection($views),
+                'meta' => $this->pagination->metadata($views)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

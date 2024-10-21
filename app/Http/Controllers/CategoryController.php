@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\Category\index;
+use App\Http\Resources\Category\show;
 use App\Http\Resources\CategoryResource;
 use App\pagination\paginating;
 use App\Repositories\Category\CategoryInterface;
@@ -34,8 +36,8 @@ class CategoryController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieving categories',
-                'data' => CategoryResource::collection($categories),
-                'meta'=> $this->pagination->metadata($categories)
+                'data' => index::collection($categories),
+                'meta' => $this->pagination->metadata($categories)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error retrieving categories', 'err' => $e->getMessage()], 500);
@@ -51,7 +53,7 @@ class CategoryController extends Controller
             ]);
 
             $category = $this->Repository->createCategory($this->req);
-            return response()->json(['success' => true, 'message' => 'Successfully store category', 'data' => new CategoryResource($category)], 201);
+            return response()->json(['success' => true, 'message' => 'Successfully store category', 'data' => $category], 201);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -61,7 +63,11 @@ class CategoryController extends Controller
     {
         try {
             $category = $this->Repository->getCategoryById($id);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving category', 'data' => new CategoryResource($category)], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully retrieving category', 
+                'data' => new show($category)
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
@@ -90,7 +96,11 @@ class CategoryController extends Controller
     {
         try {
             $category = $this->Repository->getCategoryBySlug($slug);
-            return response()->json(['success' => true, 'message' => 'successfully retrieved category', 'data' => new CategoryResource($category)], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'successfully retrieved category', 
+                'data' => new show($category)
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
@@ -141,10 +151,10 @@ class CategoryController extends Controller
         try {
             $trashedCategories = $this->Repository->getTrashedCategories($search, $perPage);
             return response()->json([
-                'success' => true, 
-                'message' => 'Successfully retrieving soft deleted categories', 
-                'data' => CategoryResource::collection($trashedCategories),
-                'meta'=>$this->pagination->metadata($trashedCategories)
+                'success' => true,
+                'message' => 'Successfully retrieving soft deleted categories',
+                'data' => index::collection($trashedCategories),
+                'meta' => $this->pagination->metadata($trashedCategories)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

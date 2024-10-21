@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Resources\uploadMedia;
+namespace App\Http\Resources\SiteSettings;
 
 use App\Traits\getFullThumbnailUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class index extends JsonResource
+class show extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -18,10 +18,11 @@ class index extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'=>$this->id,
-            'url'=>$this->getThisUrl($this->url),
-            'created_at'=>$this->created_at,
-            'updated_at'=>$this->updated_at
+            'id' => $this->id,
+            'key' => $this->key,
+            'name' => $this->name,
+            'input_type' => $this->input_type,
+            'value'=>$this->input_type === 'image' ? $this->getThisUrl($this->value) : $this->value,
         ];
     }
 }

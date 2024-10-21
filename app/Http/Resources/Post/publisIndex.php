@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Post;
 
+use App\Traits\getFullThumbnailUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,13 +13,15 @@ class publisIndex extends JsonResource
      *
      * @return array<string, mixed>
      */
+    use getFullThumbnailUrl;
+
     public function toArray(Request $request): array
     {
         return [
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->getShortDescription(),
-            'thumbnail' => $this->thumbnail,
+            'thumbnail' => $this->getThisUrl($this->thumbnail),
             'published_at' => $this->published_at instanceof \Carbon\Carbon ? $this->published_at->toISOString() : null,
             'is_published' => !is_null($this->published_at) && $this->published_at instanceof \Carbon\Carbon && $this->published_at->isPast(),
             'read_time_text' => $this->read_time == 1 ? '1 minute read' : "{$this->read_time} minutes read",
@@ -27,7 +30,7 @@ class publisIndex extends JsonResource
                     'id' => $this->category->id,
                     'name' => $this->category->name,
                     'slug' => $this->category->slug,
-                    'icon' => $this->category->icon,
+                    'icon' => $this->getThisUrl($this->category->icon),
                 ];
             }),
             'author' => $this->whenLoaded('author', function () {
@@ -35,7 +38,7 @@ class publisIndex extends JsonResource
                     'id' => $this->author->id,
                     'name' => $this->author->name,
                     'email' => $this->author->email,
-                    'avatar' => $this->author->avatar,
+                    'avatar' => $this->author->avatar ? $this->getThisUrl($this->author->avatar) : "https://pbs.twimg.com/media/Fl14K6KaAAQ_OgI?format=jpg&name=large",
                 ];
             }),
             'slug' => $this->slug ?? $this->id,

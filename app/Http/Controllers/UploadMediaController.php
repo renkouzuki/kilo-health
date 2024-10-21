@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\uploadMedia\index;
+use App\Http\Resources\uploadMedia\posts_mediaId;
 use App\Http\Resources\uploadMedia\show;
 use App\pagination\paginating;
 use App\Repositories\UploadMedias\UploadMediaInterface;
@@ -107,7 +108,8 @@ class UploadMediaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieved post',
-                'data' => $post
+                'data' => posts_mediaId::collection($post),
+                'meta' => $this->pagination->metadata($post)
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);

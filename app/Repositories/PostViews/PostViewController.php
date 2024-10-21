@@ -7,6 +7,7 @@ use App\Models\post;
 use App\Models\post_view;
 use App\Services\AuditLogService;
 use Exception;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -43,7 +44,7 @@ class PostViewController implements PostViewInterface
 
                 $postView->viewed_at = now();
                 $postView->save();
-                event(new PostViewed($post , $userId));
+                event(new PostViewed($post, $userId));
                 return $postView;
             });
         } catch (Exception $e) {
@@ -62,26 +63,40 @@ class PostViewController implements PostViewInterface
         }
     }
 
-    public function getViewsByPost(int $postId): Collection
+    public function getViewsByPost(int $postId, string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
             return post_view::where('post_id', $postId)
-                ->with('user:id,name')
-                ->orderBy('viewed_at', 'desc')
-                ->get();
+                ->with('user:id,name,avatar')->when(
+                    $search ?? null,
+                    fn($query, $search) =>
+                    $query->whereHas(
+                        'user',
+                        fn($query) =>
+                        $query->where('name', 'like', '%' . $search . '%')
+                    )
+                )->orderBy('viewed_at', 'desc')->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Error getting views by post: ' . $e->getMessage());
             throw new Exception('Error getting views by post');
         }
     }
 
-    public function getViewsByUser(int $userId): Collection
+    public function getViewsByUser(int $userId, string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
             return post_view::where('user_id', $userId)
-                ->with('post:id,title')
-                ->orderBy('viewed_at', 'desc')
-                ->get();
+                ->with('post:id,title,description,thumbnail')
+                ->when(
+                    $search ?? null,
+                    fn($query, $search) =>
+                    $query->whereHas(
+                        'post',
+                        fn($query) =>
+                        $query->where('title', 'like', '%' . $search . '%')
+                            ->orWhere('description', 'like', '%' . $search . '%')
+                    )
+                )->orderBy('viewed_at', 'desc')->paginate($perPage);
         } catch (Exception $e) {
             Log::error('Error getting views by user: ' . $e->getMessage());
             throw new Exception('Error getting views by user');

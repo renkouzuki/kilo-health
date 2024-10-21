@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\TopicResource;
+use App\Http\Resources\Category\index as CategoryIndex;
+use App\Http\Resources\Topics\index;
 use App\Http\Resources\Topics\popularTopic;
+use App\Http\Resources\Topics\show;
 use App\pagination\paginating;
 use App\Repositories\Topics\TopicInterface;
 use Exception;
@@ -33,7 +35,7 @@ class TopicController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'successfully retrieving topics data',
-                'data' => TopicResource::collection($topics),
+                'data' => index::collection($topics),
                 'meta' => $this->pagination->metadata($topics)
             ], 200);
         } catch (Exception $e) {
@@ -46,11 +48,15 @@ class TopicController extends Controller
         try {
             $validatedData = $this->req->validate([
                 'name' => 'required|max:255',
-                'category_id' => 'required|exists:categories,id',
+                'categorie_id' => 'required|exists:categories,id',
             ]);
 
             $topic = $this->Repository->createTopic($validatedData);
-            return response()->json(['success' => true, 'message' => 'Successfully store topic data', 'data' => new TopicResource($topic)], 201);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully store topic data',
+                'data' => $topic
+            ], 201);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -60,7 +66,11 @@ class TopicController extends Controller
     {
         try {
             $topic = $this->Repository->getTopicById($id);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieved topic data', 'data' => new TopicResource($topic)], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully retrieved topic data',
+                'data' => new show($topic)
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Topic not found'], 404);
         } catch (Exception $e) {
@@ -73,9 +83,9 @@ class TopicController extends Controller
         try {
             $topics = $this->Repository->getPopularTopics(10, 30);
             return response()->json([
-                'success' => true, 
-                'message' => 
-                'Successfully retrieved popular topics', 
+                'success' => true,
+                'message' =>
+                'Successfully retrieved popular topics',
                 'data' => popularTopic::collection($topics),
                 'meta' => $this->pagination->metadata($topics)
             ], 200);
@@ -89,12 +99,16 @@ class TopicController extends Controller
         try {
             $validatedData = $this->req->validate([
                 'name' => 'sometimes|max:255',
-                'category_id' => 'sometimes|exists:categories,id',
+                'categorie_id' => 'sometimes|exists:categories,id',
             ]);
 
             $this->Repository->updateTopic($id, $validatedData);
             $topic = $this->Repository->getTopicById($id);
-            return response()->json(['success' => true, 'message' => 'Successfully updated topic data', 'data' => new TopicResource($topic)], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully updated topic data',
+                'data' => $topic
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
@@ -124,7 +138,7 @@ class TopicController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieving topics',
-                'data' => TopicResource::collection($topics),
+                'data' => index::collection($topics),
                 'meta' => $this->pagination->metadata($topics)
             ], 200);
         } catch (Exception $e) {
@@ -166,7 +180,7 @@ class TopicController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieving soft deleted topic',
-                'data' => TopicResource::collection($trashedCategories),
+                'data' => index::collection($trashedCategories),
                 'metadata' => $this->pagination->metadata($trashedCategories)
             ], 200);
         } catch (Exception $e) {

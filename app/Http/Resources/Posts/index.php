@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Posts;
 
+use App\Traits\getFullThumbnailUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,6 +13,8 @@ class index extends JsonResource
      *
      * @return array<string, mixed>
      */
+    use getFullThumbnailUrl;
+
     public function toArray(Request $request): array
     {
         return [
@@ -20,7 +23,7 @@ class index extends JsonResource
             'description' => $this->getShortDescription(),
             'category' => $this->category->name,
             'author' => $this->author->name,
-            'thumbnail' => $this->thumbnail,
+            'thumbnail' => $this->getThisUrl($this->thumbnail),
             'published_at' => $this->published_at,
             'views' => $this->views,
             'likes' => $this->likes,

@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\SiteSettings\index;
+use App\Http\Resources\SiteSettings\show;
+use App\pagination\paginating;
 use App\Repositories\SiteSettings\SiteSettingInterface;
 use App\Services\SiteSettingsService;
 use Exception;
@@ -17,11 +20,14 @@ class SiteSettingController extends Controller
 
     protected $siteSettingsService;
 
+    protected $pagination;
+
     public function __construct(SiteSettingInterface $repository, Request $req, SiteSettingsService $siteSettingsService)
     {
         $this->req = $req;
         $this->Repository = $repository;
         $this->siteSettingsService = $siteSettingsService;
+        $this->pagination = new paginating();
     }
 
     public function index(): JsonResponse
@@ -32,7 +38,12 @@ class SiteSettingController extends Controller
             $perPage = $this->req->per_page ?? 10;
 
             $settings = $this->Repository->getAllSettings($search, $perPage);
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving settings', 'data' => $settings], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully retrieving settings', 
+                'data' => index::collection($settings),
+                'meta' => $this->pagination->metadata($settings)
+            ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -45,7 +56,11 @@ class SiteSettingController extends Controller
             if (!$setting) {
                 return response()->json(['message' => 'Setting not found'], 404);
             }
-            return response()->json(['success' => true, 'message' => 'Successfully retrieving setting', 'data' => $setting], 200);
+            return response()->json([
+                'success' => true, 
+                'message' => 'Successfully retrieving setting', 
+                'data' => new show($setting)
+            ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {

@@ -27,7 +27,7 @@ class TopicController implements TopicInterface
     public function getAllTopics(string $search = null, int $perPage = 10): LengthAwarePaginator
     {
         try {
-            return topic::with(['category'])
+            return topic::query()
                 ->when(
                     $search ?? null,
                     fn($query, $search) =>
@@ -53,7 +53,7 @@ class TopicController implements TopicInterface
                 'categories.slug as category_slug',
                 'categories.icon as category_icon',
                 DB::raw('COUNT(DISTINCT posts.id) as posts_count')
-            ])->join('categories', 'topics.category_id', '=', 'categories.id')
+            ])->join('categories', 'topics.categorie_id', '=', 'categories.id')
                 ->leftJoin('posts', function ($join) {
                     $join->on('posts.category_id', '=', 'categories.id')
                         ->whereNull('posts.deleted_at');
@@ -73,7 +73,7 @@ class TopicController implements TopicInterface
     public function getTopicById(int $id): ?topic
     {
         try {
-            return topic::findOrFail($id);
+            return topic::with('categorie')->findOrFail($id);
         } catch (ModelNotFoundException $e) {
             return throw new Exception('Topic not found');
         } catch (Exception $e) {
@@ -131,7 +131,7 @@ class TopicController implements TopicInterface
     public function getTopicsByCategory(string $search = null, int $perPage = 10, int $categoryId): LengthAwarePaginator
     {
         try {
-            return topic::where('category_id', $categoryId)
+            return topic::where('categorie_id', $categoryId)
                 ->when(
                     $search ?? null,
                     fn($query, $search) =>
@@ -171,7 +171,7 @@ class TopicController implements TopicInterface
             $dataToDelete = [
                 'id' => $topic->id,
                 'name' => $topic->name,
-                'category_id' => $topic->category_id,
+                'categorie_id' => $topic->categorie_id,
             ];
 
             $forceDeleted = $topic->forceDelete();
