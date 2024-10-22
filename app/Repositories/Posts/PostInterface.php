@@ -27,6 +27,6 @@ interface PostInterface
     public function getTrashedPosts(Request $req, int $perPage): LengthAwarePaginator;
     public function restorePost(int $postId): bool;
     public function forceDeletePost(int $postId): bool;
-    public function getRelatedPosts(Post $post, int $limit = 3): Collection;
+    public function getRelatedPosts(int $postId, int $limit = 3): Collection;
     public function getPopularPosts(int $limit = 10 , int $days = 30): Collection;
 }

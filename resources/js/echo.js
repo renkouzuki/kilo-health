@@ -14,6 +14,11 @@ window.Echo = new Echo({
 });
 
 
-window.Echo.channel('posts').listen('.App\\Events\\Posts\\PostCreated', (e) => {
+let newVar = window.Echo.channel('posts').listen('.App\\Events\\Posts\\PostCreated', (e) => {
     console.log(e);
 });
+
+
+newVar.listen('.App\\Events\\Posts\\PostDeleted' , (e) => {
+    console.log(e);
+})

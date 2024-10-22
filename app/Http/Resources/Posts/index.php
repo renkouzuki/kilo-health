@@ -21,10 +21,10 @@ class index extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->getShortDescription(),
-            'category' => $this->category->name,
+            'category' => $this->category ? $this->category->name : "no category",
             'author' => $this->author->name,
             'thumbnail' => $this->getThisUrl($this->thumbnail),
-            'published_at' => $this->published_at,
+            'published_at' => $this->published_at ? $this->published_at : "this post haven't publish yet!",
             'views' => $this->views,
             'likes' => $this->likes,
             'created_at' => $this->created_at->format('Y-m-d H:i:s')

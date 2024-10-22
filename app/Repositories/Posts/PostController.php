@@ -69,10 +69,12 @@ class PostController implements PostInterface
         }
     }
 
-    public function getRelatedPosts(post $post, int $limit = 3): Collection
+    public function getRelatedPosts(int $postId, int $limit = 3): Collection
     {
         try {
-            return post::select([
+            $post = post::findOrFail($postId);
+
+            return Post::select([
                 'posts.id',
                 'posts.title',
                 'posts.description',

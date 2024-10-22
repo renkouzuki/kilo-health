@@ -34,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/popular/topics' , [TopicController::class , 'popularTopics'])->middleware('permission:view_items');
     Route::get('/allsettings' , [SiteSettingController::class , 'homepageSettings'])->middleware('permission:view_items');
     Route::get('/setting/{key}' , [SiteSettingController::class , 'homepageSetting'])->middleware('permission:view_items');
+    Route::get('/related_posts/{postId}' , [PostController::class , 'getRelatedPosts'])->middleware('permission:view_items');
 
     Route::get('/testView', function () {
         $test = new SwitchMe();

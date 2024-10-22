@@ -137,20 +137,31 @@ class PostController extends Controller
     {
         try {
             $post = $this->Repository->getPostByIdForPublic($id);
-            $relatedPosts = $this->Repository->getRelatedPosts($post);
             $strategy = $this->getContentStrategy($post->content_type);
             $post->rendered_content = $strategy->renderContent($post->content);
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieved post',
-                'data' => [
-                    'post' => new publishShow($post),
-                    'related_posts' => publisIndex::collection($relatedPosts)
-                ]
+                'data' => new publishShow($post),
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getRelatedPosts(int $postId) : JsonResponse{
+        try{
+            $relatedPosts = $this->Repository->getRelatedPosts($postId);
+            return response()->json([
+               'success' => true,
+               'message' => 'Successfully retrieved related posts',
+                'data' => publisIndex::collection($relatedPosts)
+            ], 200);
+        }catch(ModelNotFoundException $e){
+            return response()->json(['success' => false, 'message' => $e->getMessage()] , 404);
+        }catch(Exception $e){
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
