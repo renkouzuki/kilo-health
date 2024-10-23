@@ -9,10 +9,12 @@ use App\Models\categorie;
 use App\Services\AuditLogService;
 use Exception;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -55,6 +57,26 @@ class CategoryController implements CategoryInterface
         } catch (Exception $e) {
             Log::error('Database error: ' . $e->getMessage());
             throw new Exception('Error retrieving category');
+        }
+    }
+
+    public function getPopularCategory(): Collection
+    {
+        try {
+            return categorie::withCount([
+                'posts as total_views' => function ($query) {
+                    $query->select(DB::raw('SUM(views)'));
+                },
+                'posts as total_likes' => function ($query) {
+                    $query->select(DB::raw('SUM(likes)'));
+                },
+            ])
+            ->orderByRaw('total_views + total_likes DESC')
+            ->take(10)
+            ->get();
+        } catch (Exception $e) {
+            Log::error('Database error: ' . $e->getMessage());
+            throw new Exception('Error retrieving popular category');
         }
     }
 

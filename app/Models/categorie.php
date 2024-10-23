@@ -14,7 +14,7 @@ class categorie extends Model
 
     public function posts()
     {
-        return $this->hasMany(post::class);
+        return $this->hasMany(post::class , 'category_id');
     }
 
     public function topics()

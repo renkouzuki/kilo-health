@@ -64,8 +64,8 @@ class CategoryController extends Controller
         try {
             $category = $this->Repository->getCategoryById($id);
             return response()->json([
-                'success' => true, 
-                'message' => 'Successfully retrieving category', 
+                'success' => true,
+                'message' => 'Successfully retrieving category',
                 'data' => new show($category)
             ], 200);
         } catch (ModelNotFoundException $e) {
@@ -92,13 +92,27 @@ class CategoryController extends Controller
         }
     }
 
+    public function getPopularCategory()
+    {
+        try {
+            $categories = $this->Repository->getPopularCategory();
+            return response()->json([
+                'success' => true,
+                'message' => 'successfully retrieving categories',
+                'data' => $categories
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function showBySlug(string $slug): JsonResponse
     {
         try {
             $category = $this->Repository->getCategoryBySlug($slug);
             return response()->json([
-                'success' => true, 
-                'message' => 'successfully retrieved category', 
+                'success' => true,
+                'message' => 'successfully retrieved category',
                 'data' => new show($category)
             ], 200);
         } catch (ModelNotFoundException $e) {

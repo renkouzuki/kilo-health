@@ -504,7 +504,6 @@ class PostController implements PostInterface
         }
     }
 
-
     private function applyFilters(Builder $query, Request $req): void
     {
         $filters = [
