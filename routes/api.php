@@ -13,13 +13,15 @@ use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\UploadMediaController;
 use App\Http\Controllers\UserManagement;
+use App\Models\categorie;
 use App\TestMethod\SwitchMe;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [authenticate::class, 'register']);
 Route::post('/login', [authenticate::class, 'login']);
-
+Route::get('/allsettings' , [SiteSettingController::class , 'homepageSettings']);
 Route::middleware('auth:sanctum')->group(function () {
     ///// public routes
     Route::put('/update_user', [UserManagement::class, 'UpdateUserInfo']);
@@ -31,8 +33,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('posts/{postId}/view', [PostViewController::class, 'recordView'])->middleware('permission:view_items');
     Route::post('/{id}/like', [PostController::class, 'like'])->middleware('permission:view_items');
     Route::delete('/{id}/like', [PostController::class, 'unlike'])->middleware('permission:view_items');
+   
     Route::get('/popular/topics' , [TopicController::class , 'popularTopics'])->middleware('permission:view_items');
-    Route::get('/allsettings' , [SiteSettingController::class , 'homepageSettings'])->middleware('permission:view_items');
+    
     Route::get('/setting/{key}' , [SiteSettingController::class , 'homepageSetting'])->middleware('permission:view_items');
     Route::get('/related_posts/{postId}' , [PostController::class , 'getRelatedPosts'])->middleware('permission:view_items');
     Route::get('/popularCategory' , [CategoryController::class , 'getPopularCategory'])->middleware('permission:view_items');
@@ -161,8 +164,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{key}', [SiteSettingController::class, 'update'])->middleware(['role:super_admin', 'permission:update_items']);
         Route::post('/', [SiteSettingController::class, 'store'])->middleware(['role:super_admin', 'permission:create_items']);
         Route::delete('/{key}', [SiteSettingController::class, 'destroy'])->middleware(['role:super_admin', 'permission:delete_items']);
-
-        //// need get site_settings data to be display on frontend page like logo or something
     });
 });
 
@@ -176,11 +177,22 @@ Route::post('/msg', function (Request $req) {
     ]);
 });
 
-
-
 //Route::get('/read_image',function(){
 
     //$url = Storage::disk('s3')->temporaryUrl('images/qDzvxaOoXGMQCcxZ1WEXOC4dDDvPO1MQtMc0gYWK.jpg',now()->addHours(5));
 
     //return response()->json(['url' => $url]);
 //});
+
+Route::get('/test' , function(){
+    return [
+        'data' => Categorie::withCount(['posts as total_likes' => function($query) {
+            $query->select(DB::raw('sum(likes)'));
+        }])->withSum('posts', 'views')
+        ->with(['posts'=>function($query){
+            $query->select('id','title','category_id',DB::raw('sum(views) as total_views'))
+            ->where('title' , 'chainsaw man is awsome <3')
+            ->with('views')->groupBy('id','title','category_id');
+        }])->select(DB::raw('min(id) as id') , 'name')->groupBy('name')->get()
+    ];
+});

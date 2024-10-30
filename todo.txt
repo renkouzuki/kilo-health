@@ -4,6 +4,9 @@
 
 make pagination return data part with image use aws url env for easy to use
 
-test readtime feature
 
-test html and markdown feature
+fix per_size thing 
+
+
+cache getting all site_setting need something to clear it
+

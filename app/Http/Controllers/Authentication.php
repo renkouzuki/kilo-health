@@ -41,7 +41,7 @@ class Authentication extends Controller
             $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
 
             event(new UserRegistered($user));
-            return response()->json(['success' => true, 'message' => 'welcome new member ^w^', 'user' => $user, 'token' => $token], 201);
+            return response()->json(['success' => true, 'message' => 'welcome new member ^w^', 'data' => $user, 'token' => $token], 201);
         } catch (ValidationException $e) {
             $customErrorMessage = 'Oops, looks like something went wrong with your submission.';
             return response(['success' => false, 'message' => $customErrorMessage, 'issues' => $e->errors()], 422);
@@ -69,7 +69,7 @@ class Authentication extends Controller
             $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
 
             event(new UserLoggedIn($user));
-            return response()->json(['success' => true, 'message' => 'welcome back master :3', 'user' => $user, 'token' => $token], 200);
+            return response()->json(['success' => true, 'message' => 'welcome back master :3', 'data' => $user, 'token' => $token], 200);
         } catch (ValidationException $e) {
             $customErrorMessage = 'oops look likes something wrong with your submission';
             return response(['success' => false, 'message' => $customErrorMessage, 'issues' => $e->errors()], 422);

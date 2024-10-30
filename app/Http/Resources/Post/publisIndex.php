@@ -23,7 +23,6 @@ class publisIndex extends JsonResource
             'description' => $this->getShortDescription(),
             'thumbnail' => $this->getThisUrl($this->thumbnail),
             'published_at' => $this->published_at instanceof \Carbon\Carbon ? $this->published_at->toISOString() : null,
-            'is_published' => !is_null($this->published_at) && $this->published_at instanceof \Carbon\Carbon && $this->published_at->isPast(),
             'read_time_text' => $this->read_time == 1 ? '1 minute read' : "{$this->read_time} minutes read",
             'category' => $this->whenLoaded('category', function () {
                 return [
@@ -41,7 +40,6 @@ class publisIndex extends JsonResource
                     'avatar' => $this->author->avatar ? $this->getThisUrl($this->author->avatar) : "https://pbs.twimg.com/media/Fl14K6KaAAQ_OgI?format=jpg&name=large",
                 ];
             }),
-            'slug' => $this->slug ?? $this->id,
         ];
     }
 
