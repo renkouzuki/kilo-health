@@ -37,6 +37,9 @@ pipeline {
                         
                         // Add or modify any environment variables needed
                         bat '''
+                            echo APP_KEY= >> .env           
+                            echo CACHE_DRIVER=file >> .env 
+                            echo SESSION_DRIVER=file >> .env
                             echo DB_CONNECTION=mysql >> .env
                             echo DB_HOST=mysql >> .env
                             echo DB_PORT=3306 >> .env
@@ -79,14 +82,27 @@ pipeline {
                         '''
                     } else {
                         bat '''
-                            docker-compose up -d
-                            timeout /t 30
-                            docker-compose exec -T app composer install
-                            docker-compose exec -T app cp .env.example .env
-                            docker-compose exec -T app php artisan key:generate
-                            docker-compose exec -T app php artisan migrate --force
-                            docker-compose exec -T app npm install
-                            docker-compose exec -T app npm run build
+                             docker-compose up -d
+                             timeout /t 30
+
+                             REM NEW: Clear any existing cache
+                             docker-compose exec -T app php artisan config:clear
+                             docker-compose exec -T app php artisan cache:clear
+                            
+                             REM Install dependencies
+                             docker-compose exec -T app composer install --no-scripts
+                            
+                             REM CHANGED: Key generation with force flag and config cache
+                             docker-compose exec -T app php artisan key:generate --force
+                             docker-compose exec -T app php artisan config:cache 
+                            
+                             REM Complete setup
+                             docker-compose exec -T app php artisan migrate --force
+                             docker-compose exec -T app npm install
+                             docker-compose exec -T app npm run build
+                            
+                             REM NEW: Verify key existence
+                             docker-compose exec -T app php artisan env 
                         '''
                     }
                 }
@@ -99,7 +115,13 @@ pipeline {
                     if (isUnix()) {
                         sh 'docker-compose exec -T app php artisan test'
                     } else {
-                        bat 'docker-compose exec -T app php artisan test'
+                        bat '''
+                            REM NEW: Clear config cache before testing
+                            docker-compose exec -T app php artisan config:clear
+                            
+                            REM Run tests
+                            docker-compose exec -T app php artisan test
+                        '''
                     }
                 }
             }
