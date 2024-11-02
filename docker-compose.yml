@@ -5,47 +5,39 @@ services:
       dockerfile: Dockerfile
     container_name: laravel_app
     restart: unless-stopped
-    working_dir: /var/www/
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+      - /var/www/vendor/
+      - /var/www/node_modules/
+    ports:
+      - "4000:8000"
+      - "5173:5173"
+      - "8081:8081"
     env_file:
       - .env
-    volumes:
-      - ./:/var/www
-    ports:
-      - "8081:8081"
     networks:
-      - laravel_net
-
-  nginx:
-    image: nginx:alpine
-    container_name: laravel_nginx
-    restart: unless-stopped
-    ports:
-      - "8000:80"
-    volumes:
-      - ./:/var/www
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d/
-    networks:
-      - laravel_net
+      - app_network
     depends_on:
-      - app
+      - mysql
 
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins
-    privileged: true
-    user: root
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      MYSQL_DATABASE: kilohealth
     ports:
-      - "8080:8080"
-      - "50000:50000"
+      - "3306:3306"
     volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
+      - mysql_data:/var/lib/mysql
     networks:
-      - laravel_net
-
-networks:
-  laravel_net:
-    driver: bridge
+      - app_network
 
 volumes:
-  jenkins_home:
+  mysql_data:
+
+networks:
+  app_network:
+    driver: bridge

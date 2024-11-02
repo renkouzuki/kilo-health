@@ -1,6 +1,6 @@
 FROM php:8.2-fpm
 
-# Install system dependencies
+# Install system dependencies and clean up in one step
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -9,38 +9,51 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    libpq-dev \
-    libzip-dev \
-    nodejs \
-    npm
+    default-mysql-client \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Install PCNTL extension separately first
+RUN docker-php-ext-install pcntl
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_pgsql pgsql mbstring exif pcntl bcmath gd zip
+# Then install other PHP extensions
+RUN docker-php-ext-install \
+    pdo \
+    pdo_mysql \
+    mysqli \
+    mbstring \
+    exif \
+    bcmath \
+    gd
 
-# Install AWS CLI
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip \
-    && ./aws/install \
-    && rm -rf aws awscliv2.zip
+# Install Node.js and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get update \
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Get latest Composer
+# Get Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Create system user
-RUN useradd -G www-data,root -u 1000 -d /home/laravel laravel
-RUN mkdir -p /home/laravel/.composer && \
-    chown -R laravel:laravel /home/laravel
-
-# Set working directory
 WORKDIR /var/www
 
-# Copy existing application directory permissions
-COPY --chown=laravel:laravel . /var/www
+# Copy only necessary files first
+COPY composer.* ./
+COPY package*.json ./
 
-USER laravel
+# Install dependencies
+RUN composer install --no-scripts --no-autoloader
+RUN npm install
 
-# Expose port for Reverb
-EXPOSE 8081
+# Copy the rest of the application
+COPY . .
+
+# Final steps
+RUN composer dump-autoload --optimize \
+    && npm run build \
+    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+EXPOSE 8000
+
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
