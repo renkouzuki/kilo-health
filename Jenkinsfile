@@ -1,59 +1,108 @@
 pipeline {
     agent any
-
+    
     environment {
         DOCKER_COMPOSE_VERSION = '2.21.0'
         APP_NAME = 'laravel-app'
     }
-
+    
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                script {
+                    checkout scm
+                }
             }
         }
-
+        
         stage('Build') {
             steps {
-                sh 'docker-compose build --no-cache'
+                script {
+                    if (isUnix()) {
+                        sh 'docker-compose build --no-cache'
+                    } else {
+                        bat 'docker-compose build --no-cache'
+                    }
+                }
             }
         }
-
+        
         stage('Laravel Setup') {
             steps {
-                sh 'docker-compose up -d'
-                sh 'docker-compose exec -T app composer install'
-                sh 'docker-compose exec -T app cp .env.example .env'
-                sh 'docker-compose exec -T app php artisan key:generate'
-                sh 'docker-compose exec -T app php artisan migrate --force'
-                sh 'docker-compose exec -T app npm install'
-                sh 'docker-compose exec -T app npm run build'
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            docker-compose up -d
+                            sleep 30  # Wait for MySQL to be ready
+                            docker-compose exec -T app composer install
+                            docker-compose exec -T app cp .env.example .env
+                            docker-compose exec -T app php artisan key:generate
+                            docker-compose exec -T app php artisan migrate --force
+                            docker-compose exec -T app npm install
+                            docker-compose exec -T app npm run build
+                        '''
+                    } else {
+                        bat '''
+                            docker-compose up -d
+                            timeout /t 30
+                            docker-compose exec -T app composer install
+                            docker-compose exec -T app cp .env.example .env
+                            docker-compose exec -T app php artisan key:generate
+                            docker-compose exec -T app php artisan migrate --force
+                            docker-compose exec -T app npm install
+                            docker-compose exec -T app npm run build
+                        '''
+                    }
+                }
             }
         }
-
+        
         stage('Test') {
             steps {
-                sh 'docker-compose exec -T app php artisan test'
+                script {
+                    if (isUnix()) {
+                        sh 'docker-compose exec -T app php artisan test'
+                    } else {
+                        bat 'docker-compose exec -T app php artisan test'
+                    }
+                }
             }
         }
-
+        
         stage('Deploy') {
             when {
-                branch 'main'  // Only deploy from main branch
+                branch 'main'
             }
             steps {
-                sh 'docker-compose up -d'
+                script {
+                    if (isUnix()) {
+                        sh 'docker-compose up -d'
+                    } else {
+                        bat 'docker-compose up -d'
+                    }
+                }
             }
         }
-
+        
         stage('Cleanup') {
             steps {
-                sh 'docker-compose down'
-                sh 'docker system prune -f'
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            docker-compose down
+                            docker system prune -f
+                        '''
+                    } else {
+                        bat '''
+                            docker-compose down
+                            docker system prune -f
+                        '''
+                    }
+                }
             }
         }
     }
-
+    
     post {
         always {
             cleanWs()
