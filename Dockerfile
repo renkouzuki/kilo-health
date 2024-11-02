@@ -54,6 +54,12 @@ RUN composer dump-autoload --optimize \
     && npm run build \
     && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
+# Copy the start script
+COPY start.sh /usr/local/bin/start.sh
+
+# Make sure the script is executable
+RUN chmod +x /usr/local/bin/start.sh
+
 EXPOSE 8000
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["/usr/local/bin/start.sh"]
