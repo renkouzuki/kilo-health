@@ -14,6 +14,29 @@ pipeline {
                 }
             }
         }
+
+        stage('Setup Environment') {
+            steps {
+                script {
+                    // Create .env file from .env.example
+                    if (fileExists('.env.example')) {
+                        bat 'copy .env.example .env'
+                        
+                        // Add or modify any environment variables needed
+                        bat '''
+                            echo DB_CONNECTION=mysql >> .env
+                            echo DB_HOST=mysql >> .env
+                            echo DB_PORT=3306 >> .env
+                            echo DB_DATABASE=kilohealth >> .env
+                            echo DB_USERNAME=root >> .env
+                            echo DB_PASSWORD= >> .env
+                        '''
+                    } else {
+                        error '.env.example file not found'
+                    }
+                }
+            }
+        }
         
         stage('Build') {
             steps {
