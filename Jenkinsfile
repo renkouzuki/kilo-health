@@ -15,6 +15,19 @@ pipeline {
             }
         }
 
+        stage('Cleanup Previous Build') {
+            steps {
+                script {
+                    bat '''
+                        docker-compose down -v
+                        docker rm -f mysql 2>nul || exit 0
+                        docker rm -f laravel_app 2>nul || exit 0
+                        docker system prune -f
+                    '''
+                }
+            }
+        }
+
         stage('Setup Environment') {
             steps {
                 script {
