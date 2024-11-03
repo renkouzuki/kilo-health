@@ -117,9 +117,11 @@ pipeline {
             }
         }
         
+        
+        
         stage('Deploy') {
             when {
-                branch 'main'
+                branch 'HaiChhan_branch'
             }
             steps {
                 script {
