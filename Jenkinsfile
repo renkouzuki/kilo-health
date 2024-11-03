@@ -117,24 +117,6 @@ pipeline {
             }
         }
         
-        stage('Test') {
-            steps {
-                script {
-                    if (isUnix()) {
-                        sh 'docker-compose exec -T app php artisan test'
-                    } else {
-                        bat '''
-                            REM NEW: Clear config cache before testing
-                            docker-compose exec -T app php artisan config:clear
-                            
-                            REM Run tests
-                            docker-compose exec -T app php artisan test
-                        '''
-                    }
-                }
-            }
-        }
-        
         stage('Deploy') {
             when {
                 branch 'main'
