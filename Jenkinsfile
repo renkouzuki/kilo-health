@@ -7,6 +7,14 @@ pipeline {
     }
     
     stages {
+        stage('Log Git Info') {
+            steps {
+                script {
+                    bat 'git --version'
+                    bat 'git config --list'
+                }
+            }
+        }
         stage('Checkout') {
             steps {
                 script {
