@@ -100,7 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{userId}/restore', [UserManagement::class, 'RestoreUser'])->middleware(['role:super_admin', 'permission:restore_users']);
         Route::delete('/{userId}/force-delete', [UserManagement::class, 'ForceDeleteUser'])->middleware(['role:super_admin', 'permission:force_delete_users']);
         Route::get('/auditlog/{userId}', [UserManagement::class, 'getAuditLog'])->middleware(['role:super_admin', 'permission:view_log']);
-        Route::post('/{userId}/rollbackData', [UserManagement::class, 'rollbackDelete'])->middleware('role:super_admin');
+        Route::post('/{userId}/rollback-data', [UserManagement::class, 'rollbackDelete'])->middleware('role:super_admin');
     });
 
     // Role Management Routes
@@ -163,7 +163,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [PostController::class, 'index'])->middleware(['role:super_admin|admin', 'permission:view_items']);
         Route::post('/', [PostController::class, 'store'])->middleware(['role:super_admin|admin|arthur', 'permission:create_items']);
         Route::get('/{id}', [PostController::class, 'show'])->middleware('permission:view_items');
-        Route::get('/{id}/post_photos', [PostController::class, 'getPostPhotosById'])->middleware('role:super_admin|admin|arthur');
+        Route::get('/{id}/post-photos', [PostController::class, 'getPostPhotosById'])->middleware('role:super_admin|admin|arthur');
         Route::put('/{id}', [PostController::class, 'update'])->middleware(['role:super_admin|admin|arthur', 'permission:update_items']);
         Route::delete('/{id}', [PostController::class, 'destroy'])->middleware(['role:super_admin|admin', 'permission:delete_items']);
         Route::post('/{id}/restore', [PostController::class, 'restore'])->middleware(['role:super_admin|admin', 'permission:restore_items']);
