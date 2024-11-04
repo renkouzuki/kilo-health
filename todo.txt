@@ -4,9 +4,8 @@
 
 make pagination return data part with image use aws url env for easy to use
 
-
-like toggle
-
 single post need to a private method with increment view 
+
+test laravel resource
 
 test api

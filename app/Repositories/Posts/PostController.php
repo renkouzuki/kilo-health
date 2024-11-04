@@ -7,8 +7,10 @@ use App\Events\Posts\PostDeleted;
 use App\Events\Posts\PostPublished;
 use App\Events\Posts\PostUnpublished;
 use App\Events\Posts\PostUpdated;
+use App\Events\Posts\PostViewed;
 use App\Models\more_post_photos;
 use App\Models\post;
+use App\Models\post_view;
 use App\Models\upload_media;
 use App\pagination\paginating;
 use App\Services\AuditLogService;
@@ -46,7 +48,7 @@ class PostController implements PostInterface
             $filters = $req->only(['search', 'categorie_id', 'author_id']);
 
             $query = Post::query()
-                ->select('posts.id', 'posts.title' , 'posts.description' , 'posts.thumbnail', 'posts.published_at', 'posts.views', 'posts.likes', 'posts.created_at', 'posts.category_id', 'posts.author_id')
+                ->select('posts.id', 'posts.title', 'posts.description', 'posts.thumbnail', 'posts.published_at', 'posts.views', 'posts.likes', 'posts.created_at', 'posts.category_id', 'posts.author_id')
                 ->with([
                     'category:id,name',
                     'author:id,name'
@@ -154,35 +156,44 @@ class PostController implements PostInterface
         }
     }
 
-    public function getPostByIdForPublic(int $id): ?Post /// for public use
+    public function getPostByIdForPublic(int $id, int $userId): ?array /// for public use
     {
         try {
-            return Post::select([
-                'id',
-                'title',
-                'description',
-                'content_type',
-                'content',
-                'category_id',
-                'author_id',
-                'thumbnail',
-                'read_time',
-                'published_at',
-                'views',
-                'likes'
-            ])
-                ->whereNotNull('published_at')
-                ->where('published_at', '<=', Carbon::now())
-                ->with([
-                    'category:id,name,slug,icon',
-                    'author:id,name,email,avatar',
+            return DB::transaction(function () use ($id, $userId) {
+                $post = Post::select([
+                    'id',
+                    'title',
+                    'description',
+                    'content_type',
+                    'content',
+                    'category_id',
+                    'author_id',
+                    'thumbnail',
+                    'read_time',
+                    'published_at',
+                    'views',
+                    'likes'
                 ])
-                ->findOrFail($id);
+                    ->whereNotNull('published_at')
+                    ->where('published_at', '<=', Carbon::now())
+                    ->with([
+                        'category:id,name,slug,icon',
+                        'author:id,name,email,avatar',
+                    ])
+                    ->findOrFail($id);
+                
+                if ($userId) {
+                    return $this->handleAuthenticatedView($post, $userId);
+                }
+                
+                return $this->handleGuestView($post);
+            });
         } catch (ModelNotFoundException $e) {
+            Log::error('Post not found: ' . $e->getMessage());
             throw new Exception('Post not found');
         } catch (Exception $e) {
-            Log::error('Error retrieving post: ' . $e->getMessage());
-            throw new Exception('Error retrieving post');
+            Log::error('Error processing post view: ' . $e->getMessage());
+            throw new Exception('Error processing post view');
         }
     }
 
@@ -232,7 +243,7 @@ class PostController implements PostInterface
             return DB::transaction(function () use ($id, $req) {
                 $post = post::findOrFail($id);
 
-                $data = $req->only(['title', 'description', 'content', 'category_id', 'content_type', 'thumbnail' , 'upload_media_id']);
+                $data = $req->only(['title', 'description', 'content', 'category_id', 'content_type', 'thumbnail', 'upload_media_id']);
 
                 if ($req->has('content')) {
                     $postData['read_time'] = $this->calculateReadTime($req->content);
@@ -305,10 +316,11 @@ class PostController implements PostInterface
         }
     }
 
-    public function toggleLike(int $postId , int $userId):bool{
-        try{
+    public function toggleLike(int $postId, int $userId): bool
+    {
+        try {
             $post = post::findOrFail($postId);
-            
+
             if ($post->likes()->where('user_id', $userId)->exists()) {
                 $post->likes()->detach($userId);
                 $post->decrement('likes');
@@ -316,11 +328,11 @@ class PostController implements PostInterface
                 $post->likes()->attach($userId);
                 $post->increment('likes');
             }
-            
+
             return true;
-        }catch(ModelNotFoundException $e){
-            throw new Exception('Post not found');   
-        }catch(Exception $e){
+        } catch (ModelNotFoundException $e) {
+            throw new Exception('Post not found');
+        } catch (Exception $e) {
             Log::error('Error toggling like: ' . $e->getMessage());
             throw new Exception('Error toggling like');
         }
@@ -524,5 +536,79 @@ class PostController implements PostInterface
             'html' => new HtmlStrategy(),
             default => throw new InvalidArgumentException("Unsupported content type: $contentType")
         };
+    }
+
+    private function handleAuthenticatedView(Post $post, int $userId): array
+    {
+        $postView = $this->createOrUpdatePostView($post->id, $userId);
+
+        if ($postView->wasRecentlyCreated) {
+            $this->incrementViewAndLog($post, $userId, $postView);
+        }
+
+        event(new PostViewed($post, $userId));
+
+        return [
+            'post' => $post,
+            'post_view' => $postView
+        ];
+    }
+
+    private function handleGuestView(Post $post): array
+    {
+        $post->increment('views');
+        
+        $this->logGuestView($post);
+        event(new PostViewed($post, 0));
+
+        return [
+            'post' => $post,
+            'post_view' => null
+        ];
+    }
+
+    private function createOrUpdatePostView(int $postId, int $userId): post_view
+    {
+        $postView = post_view::firstOrCreate([
+            'post_id' => $postId,
+            'user_id' => $userId,
+        ]);
+
+        $postView->viewed_at = now();
+        $postView->save();
+
+        return $postView;
+    }
+
+    private function incrementViewAndLog(Post $post, int $userId, post_view $postView): void
+    {
+        $post->increment('views');
+        
+        $this->logService->log(
+            $userId,
+            'recorded_post_view',
+            post_view::class,
+            $postView->id,
+            json_encode([
+                'post_id' => $post->id,
+                'user_id' => $userId,
+                'viewed_at' => now(),
+            ])
+        );
+    }
+
+    private function logGuestView(Post $post): void
+    {
+        $this->logService->log(
+            null,
+            'recorded_guest_post_view',
+            Post::class,
+            $post->id,
+            json_encode([
+                'post_id' => $post->id,
+                'viewed_at' => now(),
+                'ip' => request()->ip(),
+            ])
+        );
     }
 }

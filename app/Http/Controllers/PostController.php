@@ -136,7 +136,11 @@ class PostController extends Controller
     public function publicShow(int $id): JsonResponse
     {
         try {
-            $post = $this->Repository->getPostByIdForPublic($id);
+            $result = $this->Repository->getPostByIdForPublic($id , $this->req->user()->id);
+            $post = $result['post'] ?? null;
+            if(!$post){
+                return response()->json(['success' => false, 'message' => 'Post not found'], 404);
+            }
             $strategy = $this->getContentStrategy($post->content_type);
             $post->rendered_content = $strategy->renderContent($post->content);
             return response()->json([

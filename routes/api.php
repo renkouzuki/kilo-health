@@ -41,8 +41,7 @@ Route::prefix('posts')->group(function () {
     // Auth required actions
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{postId}/view', [PostViewController::class, 'recordView']);
-        Route::post('/{id}/like', [PostController::class, 'like']);
-        Route::delete('/{id}/like', [PostController::class, 'unlike']);
+        Route::post('/{id}/like', [PostController::class, 'toggleLikes']);
     });
 });
 
