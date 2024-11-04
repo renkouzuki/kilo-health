@@ -156,74 +156,74 @@ class authenticate extends Controller
         }
     }
 
-    public function resetPassword()
-    {
-        try {
-            $this->req->validate([
-                'password' => 'required|string|min:8|confirmed',
-            ]);
+    // public function resetPassword()
+    // {
+    //     try {
+    //         $this->req->validate([
+    //             'password' => 'required|string|min:8|confirmed',
+    //         ]);
 
 
-            $otpKey = "password_reset_otp_" . $this->req->email;
+    //         $otpKey = "password_reset_otp_" . $this->req->email;
 
-            if (!Cache::has($otpKey)) {
-                return response()->json(['message' => 'OTP verification required.'], 422);
-            }
+    //         if (!Cache::has($otpKey)) {
+    //             return response()->json(['message' => 'OTP verification required.'], 422);
+    //         }
 
 
-            $user = User::where('email', $this->req->email)->first();
-            if (!$user) {
-                return response()->json(['message' => 'User not found.'], 404);
-            }
+    //         $user = User::where('email', $this->req->email)->first();
+    //         if (!$user) {
+    //             return response()->json(['message' => 'User not found.'], 404);
+    //         }
 
-            $user->password = bcrypt($this->req->password);
-            $user->save();
+    //         $user->password = bcrypt($this->req->password);
+    //         $user->save();
 
-            return response()->json(['message' => 'Password has been reset successfully.']);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
+    //         return response()->json(['message' => 'Password has been reset successfully.']);
+    //     } catch (Exception $e) {
+    //         return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    //     }
+    // }
 
-    public function sendOtp()
-    {
-        try {
-            $this->req->validate(['email' => 'required|email']);
-            $email = $this->req->email;
-            $otp = rand(100000, 999999);
-            $otpKey = "password_reset_otp" . $email;
+    // public function sendOtp()
+    // {
+    //     try {
+    //         $this->req->validate(['email' => 'required|email']);
+    //         $email = $this->req->email;
+    //         $otp = rand(100000, 999999);
+    //         $otpKey = "password_reset_otp" . $email;
 
-            Cache::put($otpKey, $otp, now()->addMinutes(5));
+    //         Cache::put($otpKey, $otp, now()->addMinutes(5));
 
-            Mail::to($email)->send(new PasswordReset($otp));
+    //         Mail::to($email)->send(new PasswordReset($otp));
 
-            return response()->json(['success' => true, 'message' => 'Otp sent successfully'], 200);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
+    //         return response()->json(['success' => true, 'message' => 'Otp sent successfully'], 200);
+    //     } catch (Exception $e) {
+    //         return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    //     }
+    // }
 
-    public function verifyOtp()
-    {
-        try {
-            $this->req->validate([
-                'otp' => 'required|digits:6',
-            ]);
+    // public function verifyOtp()
+    // {
+    //     try {
+    //         $this->req->validate([
+    //             'otp' => 'required|digits:6',
+    //         ]);
 
-            $email = $this->req->user()->email;
-            $otpKey = "password_reset_otp_" . $email;
+    //         $email = $this->req->user()->email;
+    //         $otpKey = "password_reset_otp_" . $email;
 
-            $cachedOtp = Cache::get($otpKey);
+    //         $cachedOtp = Cache::get($otpKey);
+        
+    //         if ($cachedOtp && $cachedOtp == $this->req->otp) {
+    //             Cache::forget($otpKey);
 
-            if ($cachedOtp && $cachedOtp == $this->req->otp) {
-                Cache::forget($otpKey);
+    //             return response()->json(['message' => 'OTP verified. You can now reset your password.']);
+    //         }
 
-                return response()->json(['message' => 'OTP verified. You can now reset your password.']);
-            }
-
-            return response()->json(['message' => 'Invalid or expired OTP.'], 422);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
+    //         return response()->json(['message' => 'Invalid or expired OTP.'], 422);
+    //     } catch (Exception $e) {
+    //         return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    //     }
+    // }
 }
