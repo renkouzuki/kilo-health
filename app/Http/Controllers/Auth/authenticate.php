@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\CustomValidation\CustomValue;
 use App\Events\UserMangement\UserInfoUpdated;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\auth_user;
 use App\Models\Role;
 use App\Models\User;
 use Exception;
@@ -50,7 +51,10 @@ class authenticate extends Controller
             $expireDate = now()->addDays(7);
             $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
 
-            return response()->json(['success' => true, 'message' => 'welcome new member ^w^', 'data' => $user, 'token' => $token], 201);
+            return response()->json([
+                'success' => true, 
+                'message' => 'welcome new member ^w^', 
+                'token' => $token], 201);
         } catch (ValidationException $e) {
             $customErrorMessage = 'Oops, looks like something went wrong with your submission.';
             return response(['success' => false, 'message' => $customErrorMessage, 'errors' => $e->errors()], 422);
@@ -83,7 +87,7 @@ class authenticate extends Controller
             $expireDate = now()->addDays(7);
             $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
 
-            return response()->json(['success' => true, 'message' => 'welcome back master :3', 'data' => $user, 'token' => $token], 200);
+            return response()->json(['success' => true, 'message' => 'welcome back master :3', 'token' => $token], 200);
         } catch (ValidationException $e) {
             $customErrorMessage = 'oops look likes something wrong with your submission';
             return response(['success' => false, 'message' => $customErrorMessage, 'issues' => $e->errors()], 422);
@@ -96,7 +100,7 @@ class authenticate extends Controller
     public function getUser()
     {
         try {
-            return response()->json(['success' => true, 'data' => $this->req->user()], 200);
+            return response()->json(['success' => true, 'data' => new auth_user($this->req->user())], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         } catch (Exception $e) {
