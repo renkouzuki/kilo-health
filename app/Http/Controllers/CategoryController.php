@@ -94,8 +94,9 @@ class CategoryController extends Controller
 
     public function getPopularCategory()
     {
+        $take = $this->req->take ?? 10;
         try {
-            $categories = $this->Repository->getPopularCategory();
+            $categories = $this->Repository->getPopularCategory($take);
             return response()->json([
                 'success' => true,
                 'message' => 'successfully retrieving categories',

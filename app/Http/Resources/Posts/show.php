@@ -21,7 +21,6 @@ class show extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'description' => $this->description,
-            'content' => $this->content,
             'rendered_content' => $this->rendered_content,
             'category_id' => $this->category_id,
             'category' => $this->whenLoaded('category', function () {

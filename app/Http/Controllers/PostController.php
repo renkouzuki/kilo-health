@@ -85,8 +85,9 @@ class PostController extends Controller
 
     public function popularPosts()
     {
+        $take = $this->req->take ?? 10;
         try {
-            $popularPosts = $this->Repository->getPopularPosts(10, 30);
+            $popularPosts = $this->Repository->getPopularPosts($take, 30);
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieved popular posts',
@@ -157,8 +158,9 @@ class PostController extends Controller
 
     public function getRelatedPosts(int $postId): JsonResponse
     {
+        $take = $this->req->take ?? 10;
         try {
-            $relatedPosts = $this->Repository->getRelatedPosts($postId);
+            $relatedPosts = $this->Repository->getRelatedPosts($postId , $take);
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully retrieved related posts',

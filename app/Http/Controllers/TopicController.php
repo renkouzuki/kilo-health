@@ -80,14 +80,14 @@ class TopicController extends Controller
 
     public function popularTopics(): JsonResponse
     {
+        $take = $this->req->toke ?? 10;
         try {
-            $topics = $this->Repository->getPopularTopics(10, 30);
+            $topics = $this->Repository->getPopularTopics($take, 30);
             return response()->json([
                 'success' => true,
                 'message' =>
                 'Successfully retrieved popular topics',
-                'data' => popularTopic::collection($topics),
-                'meta' => $this->pagination->metadata($topics)
+                'data' => popularTopic::collection($topics)
             ], 200);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
