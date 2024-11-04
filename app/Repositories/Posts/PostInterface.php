@@ -18,8 +18,6 @@ interface PostInterface
     public function deletePost(int $id): bool;
     public function getPostsByCategory(int $categoryId, int $perPage): LengthAwarePaginator;
     public function getPostsByAuthor(int $authorId, int $perPage): LengthAwarePaginator;
-    public function addLike(int $postId, int $userId): bool;
-    public function removeLike(int $postId, int $userId): bool;
     public function getLikesCount(int $postId): int;
     public function publishPost(int $postId): bool;
     public function unpublishPost(int $postId): bool;
@@ -29,4 +27,5 @@ interface PostInterface
     public function forceDeletePost(int $postId): bool;
     public function getRelatedPosts(int $postId, int $limit = 3): Collection;
     public function getPopularPosts(int $limit = 10 , int $days = 30): Collection;
+    public function toggleLike(int $postId , int $userId):bool;
 }

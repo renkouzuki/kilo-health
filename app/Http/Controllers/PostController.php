@@ -88,8 +88,8 @@ class PostController extends Controller
         try {
             $popularPosts = $this->Repository->getPopularPosts(10, 30);
             return response()->json([
-                'success' => true, 
-                'message' => 'Successfully retrieved popular posts', 
+                'success' => true,
+                'message' => 'Successfully retrieved popular posts',
                 'data' => publisIndex::collection($popularPosts)
             ], 200);
         } catch (Exception $e) {
@@ -151,17 +151,18 @@ class PostController extends Controller
         }
     }
 
-    public function getRelatedPosts(int $postId) : JsonResponse{
-        try{
+    public function getRelatedPosts(int $postId): JsonResponse
+    {
+        try {
             $relatedPosts = $this->Repository->getRelatedPosts($postId);
             return response()->json([
-               'success' => true,
-               'message' => 'Successfully retrieved related posts',
+                'success' => true,
+                'message' => 'Successfully retrieved related posts',
                 'data' => publisIndex::collection($relatedPosts)
             ], 200);
-        }catch(ModelNotFoundException $e){
-            return response()->json(['success' => false, 'message' => $e->getMessage()] , 404);
-        }catch(Exception $e){
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+        } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -223,27 +224,25 @@ class PostController extends Controller
         }
     }
 
-    public function like(int $id): JsonResponse
+    public function toggleLikes(int $id): JsonResponse
     {
         try {
-            $this->Repository->addLike($id, $this->req->user()->id);
-            return response()->json(['success' => true, 'message' => 'Post liked successfully'], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
+            $this->Repository->toggleLike($id, $this->req->user()->id);
 
-    public function unlike(int $id): JsonResponse
-    {
-        try {
-            $this->Repository->removeLike($id, $this->req->user()->id);
-            return response()->json(['success' => true, 'message' => 'Post unliked successfully'], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Post like status updated successfully'
+            ], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 

@@ -305,58 +305,24 @@ class PostController implements PostInterface
         }
     }
 
-    public function addLike(int $postId, int $userId): bool
-    {
-        try {
+    public function toggleLike(int $postId , int $userId):bool{
+        try{
             $post = post::findOrFail($postId);
-
-            $liked = DB::table('post_likes')
-                ->where('post_id', $postId)
-                ->where('user_id', $userId)
-                ->exists();
-
-            if (!$liked) {
-                DB::table('post_likes')->insert([
-                    'post_id' => $postId,
-                    'user_id' => $userId,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                $post->increment('likes');
-                return true;
-            }
-
-            return false;
-        } catch (ModelNotFoundException $e) {
-            throw new Exception('Post not found');
-        } catch (Exception $e) {
-            Log::error('Error adding like to post: ' . $e->getMessage());
-            throw new Exception('Error adding like to post');
-        }
-    }
-
-    public function removeLike(int $postId, int $userId): bool
-    {
-        try {
-            $post = post::findOrFail($postId);
-
-            $deleted = DB::table('post_likes')
-                ->where('post_id', $postId)
-                ->where('user_id', $userId)
-                ->delete();
-
-            if ($deleted) {
+            
+            if ($post->likes()->where('user_id', $userId)->exists()) {
+                $post->likes()->detach($userId);
                 $post->decrement('likes');
-                return true;
+            } else {
+                $post->likes()->attach($userId);
+                $post->increment('likes');
             }
-
-            return false;
-        } catch (ModelNotFoundException $e) {
-            throw new Exception('Post not found');
-        } catch (Exception $e) {
-            Log::error('Error removing like from post: ' . $e->getMessage());
-            throw new Exception('Error removing like from post');
+            
+            return true;
+        }catch(ModelNotFoundException $e){
+            throw new Exception('Post not found');   
+        }catch(Exception $e){
+            Log::error('Error toggling like: ' . $e->getMessage());
+            throw new Exception('Error toggling like');
         }
     }
 
