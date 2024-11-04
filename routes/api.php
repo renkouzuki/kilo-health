@@ -73,7 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // User Profile Routes
     Route::prefix('profile')->group(function () {
         Route::get('/', [UserManagement::class, 'getUserDetails']);
-        Route::put('/update', [UserManagement::class, 'UpdateUserInfo']);
+        Route::get('/user' , [authenticate::class , 'getUser']);
+        Route::put('/update', [authenticate::class, 'UpdateUserInfo']);
+        Route::put('/update-password', [authenticate::class, 'changePassword']);
         Route::post('/logout', [authenticate::class, 'logout']);
     });
 });
@@ -85,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
 */
 
 Route::middleware('auth:sanctum')->group(function () {    
+
     // Dashboard Analytics
     Route::get('/dashboard', [AnalyticsController::class, 'getDashboardAnalytics'])
         ->middleware('role:super_admin|admin');
@@ -97,6 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{userId}/soft-delete', [UserManagement::class, 'SoftDeleteUser'])->middleware(['role:super_admin', 'permission:delete_users']);
         Route::post('/{userId}/restore', [UserManagement::class, 'RestoreUser'])->middleware(['role:super_admin', 'permission:restore_users']);
         Route::delete('/{userId}/force-delete', [UserManagement::class, 'ForceDeleteUser'])->middleware(['role:super_admin', 'permission:force_delete_users']);
+        Route::put('/admin-update-user', [UserManagement::class , 'adminUpdateUser'])->middleware('role:super_admin|admin');
         Route::get('/auditlog/{userId}', [UserManagement::class, 'getAuditLog'])->middleware(['role:super_admin', 'permission:view_log']);
         Route::post('/{userId}/rollback-data', [UserManagement::class, 'rollbackDelete'])->middleware('role:super_admin');
     });

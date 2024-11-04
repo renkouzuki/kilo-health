@@ -1,8 +1,6 @@
 ///
 - register and login verification system
 
-- admin can change user password 
-
 test laravel resource
 
 test api

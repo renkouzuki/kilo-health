@@ -165,24 +165,6 @@ class UserManagement extends Controller
         }
     }
 
-    public function UpdateUserInfo()
-    {
-        try {
-            $this->req->validate([
-                'name' => 'sometimes|string|max:255',
-                'email' => 'sometimes|string|email',
-                'password' => 'sometimes|string|min:8|confirmed',
-                'avatar' => 'sometimes|file|mimes:jpeg,png,jpg,gif|max:2048',
-            ]);
-            $result = $this->Repository->editUserInfo($this->req);
-            return response()->json(['success' => true, 'message' => 'User update successfully', 'data' => $result], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
     public function getAuditLog(int $userId): JsonResponse
     {
         $perPage = $this->req->per_page ?? 10;
