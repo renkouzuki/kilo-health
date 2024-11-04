@@ -5,8 +5,8 @@
 make pagination return data part with image use aws url env for easy to use
 
 
-fix per_size thing 
+like toggle
 
+single post need to a private method with increment view 
 
-cache getting all site_setting need something to clear it
-
+test api

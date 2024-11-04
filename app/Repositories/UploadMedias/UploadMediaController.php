@@ -62,6 +62,8 @@ class UploadMediaController implements UploadMediaInterface
 
                     $mediaItems[] = $mediaItem;
                 }
+            }else{
+                throw new Exception('No media uploaded');
             }
 
             return $mediaItems;

@@ -86,7 +86,7 @@ class Authentication extends Controller
 
         event(new UserLoggedOut($user));
 
-        return response()->json(['message' => 'Logged out successfully!']);
+        return response()->json(['success'=>true , 'message' => 'logged out successfully'], 200);
     }
 
     public function getUserDetails()

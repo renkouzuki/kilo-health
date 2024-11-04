@@ -43,6 +43,8 @@ class postPhotosController implements postPhotosInterface
 
                     $mediaItems[] = $mediaItem;
                 }
+            }else{
+                throw new Exception('No media uploaded');
             }
 
             return $mediaItems;

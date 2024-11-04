@@ -11,8 +11,6 @@ class paginating
             'page_size' => $datas->perPage(),
             'total_items' => $datas->total(),
             'total_pages' => $datas->lastPage(),
-            'has_next' => $datas->hasMorePages(),
-            'has_prev' => !$datas->onFirstPage(),
         ];
     }
 }
