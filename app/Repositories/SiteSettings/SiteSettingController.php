@@ -74,6 +74,7 @@ class SiteSettingController implements SiteSettingInterface
 
             $updated = $setting->update($data);
             if ($updated) {
+                Cache::forget('site_setting_' . $key);
                 $this->logService->log(Auth::id(), 'updated_setting', site_setting::class, $setting->id, json_encode([
                     'key' => $key,
                     'old_value' => $oldValue,
@@ -100,6 +101,7 @@ class SiteSettingController implements SiteSettingInterface
             ];
 
             $setting = site_setting::create($data);
+            Cache::forget('all_site_settings');
             $this->logService->log(Auth::id(), 'created_setting', site_setting::class, $setting->id, json_encode($data));
             return $setting;
         } catch (Exception $e) {
@@ -131,6 +133,8 @@ class SiteSettingController implements SiteSettingInterface
                 //if ($setting->input_type == 'image' && $setting->value) {
                 //    Storage::disk('s3')->delete($setting->value);
                 //} haven't implement a bucket versioning yet
+                Cache::forget('site_setting_' . $key);
+                Cache::forget('all_site_settings');
 
                 $this->logService->log(Auth::id(), 'deleted_setting', site_setting::class, $setting->id, json_encode([
                     'model' => get_class($setting),

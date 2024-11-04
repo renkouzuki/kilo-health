@@ -39,11 +39,9 @@ pipeline {
         stage('Setup Environment') {
             steps {
                 script {
-                    // Create .env file from .env.example
                     if (fileExists('.env.example')) {
                         bat 'copy .env.example .env'
                         
-                        // Add or modify any environment variables needed
                         bat '''
                             echo APP_KEY= >> .env           
                             echo CACHE_DRIVER=file >> .env 
@@ -117,7 +115,23 @@ pipeline {
             }
         }
         
-        
+        // stage('Test') {
+        //     steps {
+        //         script {
+        //             if (isUnix()) {
+        //                 sh 'docker-compose exec -T app php artisan test'
+        //             } else {
+        //                 bat '''
+        //                     REM NEW: Clear config cache before testing
+        //                     docker-compose exec -T app php artisan config:clear
+                            
+        //                     REM Run tests
+        //                     docker-compose exec -T app php artisan test
+        //                 '''
+        //             }
+        //         }
+        //     }
+        // }
         
         stage('Deploy') {
             when {
