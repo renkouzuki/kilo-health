@@ -208,6 +208,38 @@ class UserController implements UserInterface
         }
     }
 
+    public function adminUpdateUser(int $userId , Request $req): User
+    {
+        try{
+            $user = User::findOrFail($userId);
+            $data = [
+                'name' => $req->name,
+                'email' => $req->email,
+                'password' => $req->filled('password') ? Hash::make($req->password) : null
+            ];
+
+            if ($req->hasFile('avatar')) {
+                if ($user->avatar) {
+                    Storage::disk('s3')->delete($user->avatar);
+                }
+
+                $data['avatar'] = $req->file('avatar')->store('avatar', 's3');
+            }
+
+            $data = array_filter($data);
+
+            $user->update($data);
+
+            event(new UserInfoUpdated($user));
+            return $user;
+        }catch(ModelNotFoundException $e){
+            throw new Exception('User not found');
+        }catch(Exception $e){
+            Log::error('Error editing user info: ' . $e->getMessage());
+            throw new Exception('Error editing user info');
+        }
+    }
+
     public function getAuditLogs(int $userId, int $perPage = 10): LengthAwarePaginator
     {
         try {

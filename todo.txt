@@ -1,10 +1,7 @@
 ///
 - register and login verification system
 
-
-make pagination return data part with image use aws url env for easy to use
-
-single post need to a private method with increment view 
+- admin can change user password 
 
 test laravel resource
 

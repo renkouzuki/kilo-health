@@ -198,4 +198,22 @@ class UserManagement extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+    public function adminUpdateUser(int $userId): JsonResponse
+    {
+        try {
+            $this->req->validate([
+                'name' => 'sometimes|string|max:255',
+                'email' => 'sometimes|string|email',
+                'password' => 'sometimes|string|min:8',
+                'avatar' => 'sometimes|file|mimes:jpeg,png,jpg,gif|max:2048',
+            ]);
+            $result = $this->Repository->adminUpdateUser($userId, $this->req);
+            return response()->json(['success' => true, 'message' => 'User update successfully', 'data' => $result], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }
