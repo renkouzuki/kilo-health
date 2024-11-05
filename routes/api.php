@@ -137,7 +137,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Content Management Routes
 
     // Categories
-    Route::prefix('categories')->group(function () {
+    Route::prefix('categorie')->group(function () {
         Route::get('/trashed', [CategoryController::class, 'trashed'])->middleware(['role:super_admin|admin', 'permission:view_delete_items']);
         Route::get('/', [CategoryController::class, 'index'])->middleware('permission:view_items');
         Route::post('/', [CategoryController::class, 'store'])->middleware(['role:super_admin|admin|arthur', 'permission:create_items']);
@@ -150,7 +150,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Topics
-    Route::prefix('topics')->group(function () {
+    Route::prefix('topic')->group(function () {
         Route::get('/trashed', [TopicController::class, 'trashed'])->middleware(['role:super_admin|admin', 'permission:view_delete_items']);
         Route::get('/', [TopicController::class, 'index'])->middleware('permission:view_items');
         Route::post('/', [TopicController::class, 'store'])->middleware(['role:super_admin|admin|arthur', 'permission:create_items']);
@@ -219,23 +219,23 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
-Route::get('/testView', function () {
-    $test = new SwitchMe();
-    $result = $test->useSwitch('testMethod');
-    return response()->json([
-        'msg' => $result
-    ]);
-});
+// Route::get('/testView', function () {
+//     $test = new SwitchMe();
+//     $result = $test->useSwitch('testMethod');
+//     return response()->json([
+//         'msg' => $result
+//     ]);
+// });
 
 
 //////////////////reverb
-Route::post('/msg', function (Request $req) {
-    $bruh = $req->message;
-    event(new testing($bruh));
-    return response()->json([
-        'msg' => $bruh
-    ]);
-});
+// Route::post('/msg', function (Request $req) {
+//     $bruh = $req->message;
+//     event(new testing($bruh));
+//     return response()->json([
+//         'msg' => $bruh
+//     ]);
+// });
 
 //Route::get('/read_image',function(){
 
@@ -244,15 +244,22 @@ Route::post('/msg', function (Request $req) {
 //return response()->json(['url' => $url]);
 //});
 
-Route::get('/test', function () {
+// Route::get('/test', function () {
+//     return [
+//         'data' => Categorie::withCount(['posts as total_likes' => function ($query) {
+//             $query->select(DB::raw('sum(likes)'));
+//         }])->withSum('posts', 'views')
+//             ->with(['posts' => function ($query) {
+//                 $query->select('id', 'title', 'category_id', DB::raw('sum(views) as total_views'))
+//                     ->where('title', 'chainsaw man is awsome <3')
+//                     ->with('views')->groupBy('id', 'title', 'category_id');
+//             }])->select(DB::raw('min(id) as id'), 'name')->groupBy('name')->get()
+//     ];
+// });
+
+
+Route::put('/test' , function(Request $req){
     return [
-        'data' => Categorie::withCount(['posts as total_likes' => function ($query) {
-            $query->select(DB::raw('sum(likes)'));
-        }])->withSum('posts', 'views')
-            ->with(['posts' => function ($query) {
-                $query->select('id', 'title', 'category_id', DB::raw('sum(views) as total_views'))
-                    ->where('title', 'chainsaw man is awsome <3')
-                    ->with('views')->groupBy('id', 'title', 'category_id');
-            }])->select(DB::raw('min(id) as id'), 'name')->groupBy('name')->get()
+        'val1' => $req->input('name') 
     ];
 });
