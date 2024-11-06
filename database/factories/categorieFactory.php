@@ -20,10 +20,11 @@ class categorieFactory extends Factory
 
     public function definition(): array
     {
-        $name = fake()->unique()->word();
+        $name = $this->faker->unique()->word() . '-' . $this->faker->unique()->numberBetween(1, 10000);
+        $slug = Str::slug($name);
         return [
             'name' => $name,
-            'slug' => Str::slug($name),
+            'slug' => $slug,
             'icon' => fake()->imageUrl(100, 100)
         ];
     }
