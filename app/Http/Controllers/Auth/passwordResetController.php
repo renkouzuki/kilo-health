@@ -7,6 +7,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class passwordResetController extends Controller
 {
@@ -43,6 +44,8 @@ class passwordResetController extends Controller
                 'success' => true,
                 'message' => 'Password reset OTP has been sent to your email'
             ], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->getMessage()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -73,6 +76,8 @@ class passwordResetController extends Controller
                 'success' => true,
                 'message' => 'Password reset successfully'
             ], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->getMessage()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -104,6 +109,8 @@ class passwordResetController extends Controller
                 'success' => true,
                 'message' => 'Password reset OTP has been sent to your email'
             ], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->getMessage()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

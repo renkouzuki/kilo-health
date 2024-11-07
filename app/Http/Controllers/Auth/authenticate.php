@@ -90,7 +90,7 @@ class authenticate extends Controller
             return response()->json(['success' => true, 'message' => 'welcome back master :3', 'token' => $token], 200);
         } catch (ValidationException $e) {
             $customErrorMessage = 'oops look likes something wrong with your submission';
-            return response(['success' => false, 'message' => $customErrorMessage, 'issues' => $e->errors()], 422);
+            return response(['success' => false, 'message' => $customErrorMessage, 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             Log("error: ", $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -165,7 +165,9 @@ class authenticate extends Controller
             $user->save();
 
             return response()->json(['success' => true, 'message' => 'Password changed successfully!'], 200);
-        } catch (Exception $e) {
+        }catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'something went wrong' , 'errors' => $e->getMessage()] , 422);
+        }catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }

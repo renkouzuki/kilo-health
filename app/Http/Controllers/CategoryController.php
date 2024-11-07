@@ -4,14 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\Category\index;
 use App\Http\Resources\Category\show;
-use App\Http\Resources\CategoryResource;
 use App\pagination\paginating;
 use App\Repositories\Category\CategoryInterface;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class CategoryController extends Controller
 {
@@ -54,6 +53,8 @@ class CategoryController extends Controller
 
             $category = $this->Repository->createCategory($this->req);
             return response()->json(['success' => true, 'message' => 'Successfully store category', 'data' => $category], 201);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -85,6 +86,8 @@ class CategoryController extends Controller
 
             $this->Repository->updateCategory($id, $this->req);
             return response()->json(['success' => true, 'message' => 'Successfully updated category'], 200);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {

@@ -9,6 +9,7 @@ use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class RoleController extends Controller
 {
@@ -61,6 +62,8 @@ class RoleController extends Controller
             ]);
             $role = $this->Repository->createRole($validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully store role', 'data' => $role], 201);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -74,6 +77,8 @@ class RoleController extends Controller
             ]);
             $this->Repository->updateRole($id, $validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully updated role'], 200);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {

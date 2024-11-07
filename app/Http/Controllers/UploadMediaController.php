@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class UploadMediaController extends Controller
 {
@@ -52,6 +53,8 @@ class UploadMediaController extends Controller
 
             $media = $this->Repository->uploadMedia($this->req);
             return response()->json(['success' => true, 'message' => 'Successfully uploaded', 'media' => $media], 201);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

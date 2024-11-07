@@ -7,6 +7,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class verificationController extends Controller
 {
@@ -42,6 +43,8 @@ class verificationController extends Controller
                 'success' => true,
                 'message' => 'Email verified successfully'
             ], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->getMessage()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -79,6 +82,8 @@ class verificationController extends Controller
                 'success' => true,
                 'message' => 'Verification OTP has been resent to your email'
             ], 200);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->getMessage()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

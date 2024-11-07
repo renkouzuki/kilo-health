@@ -14,6 +14,7 @@ use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class UserManagement extends Controller
 {
@@ -76,6 +77,8 @@ class UserManagement extends Controller
                 'message' => 'Role permissions updated successfully',
                 'role' => $role,
             ], 200);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -97,6 +100,8 @@ class UserManagement extends Controller
                 'message' => 'User role updated successfully',
                 'user' => $user,
             ], 200);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

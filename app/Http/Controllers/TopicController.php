@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\ValidationException;
 
 class TopicController extends Controller
 {
@@ -57,6 +58,8 @@ class TopicController extends Controller
                 'message' => 'Successfully store topic data',
                 'data' => $topic
             ], 201);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -109,6 +112,8 @@ class TopicController extends Controller
                 'message' => 'Successfully updated topic data',
                 'data' => $topic
             ], 200);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {

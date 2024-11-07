@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class SiteSettingController extends Controller
 {
@@ -81,6 +82,8 @@ class SiteSettingController extends Controller
             $this->Repository->updateSetting($key, $this->req);
 
             return response()->json(['success' => true, 'message' => 'Setting updated successfully'], 200);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
@@ -101,6 +104,8 @@ class SiteSettingController extends Controller
 
             $setting = $this->Repository->createSetting($this->req);
             return response()->json(['success' => true, 'message' => 'Successfully created setting', 'data' => $setting], 201);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

@@ -17,6 +17,7 @@ use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
 class PostController extends Controller
@@ -78,6 +79,8 @@ class PostController extends Controller
 
             $post = $this->Repository->createPost($this->req);
             return response()->json(['success' => true, 'message' => 'Successfully created post', 'data' => $post], 201);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -199,6 +202,8 @@ class PostController extends Controller
             $this->Repository->updatePost($id, $this->req);
 
             return response()->json(['success' => true, 'message' => 'successfully to update post'], 200);
+        } catch(ValidationException $e){
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
