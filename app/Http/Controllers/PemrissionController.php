@@ -63,7 +63,7 @@ class PemrissionController extends Controller
             $permission = $this->Repository->createPermission($validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully store permission', 'data' => $permission], 201);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -78,7 +78,7 @@ class PemrissionController extends Controller
             $this->Repository->updatePermission($id, $validatedData);
             return response()->json(['success' => true, 'message' => 'Successfully updated permission'], 200);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {

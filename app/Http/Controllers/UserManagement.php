@@ -78,7 +78,7 @@ class UserManagement extends Controller
                 'role' => $role,
             ], 200);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -101,7 +101,7 @@ class UserManagement extends Controller
                 'user' => $user,
             ], 200);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

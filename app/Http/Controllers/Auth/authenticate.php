@@ -53,11 +53,10 @@ class authenticate extends Controller
 
             return response()->json([
                 'success' => true, 
-                'message' => 'welcome new member ^w^', 
+                'message' => 'Registration successfully', 
                 'token' => $token], 201);
         } catch (ValidationException $e) {
-            $customErrorMessage = 'Oops, looks like something went wrong with your submission.';
-            return response(['success' => false, 'message' => $customErrorMessage, 'errors' => $e->errors()], 422);
+            return response(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             Log::error("error: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -70,7 +69,7 @@ class authenticate extends Controller
             $validated = Validator::make($this->req->all(), [
                 'email' => 'required|email',
                 'password' => 'required',
-            ], CustomValue::LoginMsg())->validate();
+            ])->validate();
 
             $user = User::where('email', $validated['email'])->first();
 
@@ -87,10 +86,9 @@ class authenticate extends Controller
             $expireDate = now()->addDays(7);
             $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
 
-            return response()->json(['success' => true, 'message' => 'welcome back master :3', 'token' => $token], 200);
+            return response()->json(['success' => true, 'message' => 'Login successfully', 'token' => $token], 200);
         } catch (ValidationException $e) {
-            $customErrorMessage = 'oops look likes something wrong with your submission';
-            return response(['success' => false, 'message' => $customErrorMessage, 'errors' => $e->errors()], 422);
+            return response(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             Log("error: ", $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

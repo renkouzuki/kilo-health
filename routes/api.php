@@ -15,10 +15,7 @@ use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\UploadMediaController;
 use App\Http\Controllers\UserManagement;
-use App\Models\categorie;
-use App\TestMethod\SwitchMe;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [authenticate::class, 'register']);

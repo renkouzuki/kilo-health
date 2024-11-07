@@ -62,7 +62,7 @@ class postPhotosController extends Controller
             $arr = $this->Repository->uploadMedia($this->req, $id);
             return response()->json(['success' => true, 'message' => 'Successfully uploaded' , 'data'=>$arr], 201);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -80,7 +80,7 @@ class postPhotosController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Successfully updated'], 200);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {

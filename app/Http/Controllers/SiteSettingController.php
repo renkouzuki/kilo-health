@@ -83,7 +83,7 @@ class SiteSettingController extends Controller
 
             return response()->json(['success' => true, 'message' => 'Setting updated successfully'], 200);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {
@@ -105,7 +105,7 @@ class SiteSettingController extends Controller
             $setting = $this->Repository->createSetting($this->req);
             return response()->json(['success' => true, 'message' => 'Successfully created setting', 'data' => $setting], 201);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->getMessage()] , 422); 
+            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
