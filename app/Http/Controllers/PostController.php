@@ -17,6 +17,7 @@ use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
@@ -137,10 +138,10 @@ class PostController extends Controller
         }
     }
 
-    public function publicShow(int $id): JsonResponse
+    public function publicShow(int $postId): JsonResponse
     {
         try {
-            $result = $this->Repository->getPostByIdForPublic($id , $this->req->user()->id);
+            $result = $this->Repository->getPostByIdForPublic($postId , $this->req->user()->id);
             $post = $result['post'] ?? null;
             if(!$post){
                 return response()->json(['success' => false, 'message' => 'Post not found'], 404);

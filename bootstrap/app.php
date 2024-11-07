@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\CustomAuthSanctum;
 use App\Http\Middleware\SetUserId;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,7 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
             'permission' => CheckPermission::class,
-            'setUserId' => SetUserId::class
+            'setUserId' => SetUserId::class,
+            'auth.sanctum' => CustomAuthSanctum::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

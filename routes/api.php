@@ -34,9 +34,9 @@ Route::post('/reset-password', [passwordResetController::class, 'resetPassword']
 // Public Content Routes
 Route::prefix('posts')->group(function () {
     // Public viewing routes - no auth required
-    Route::get('/', [PostController::class, 'getPublished']);
+    Route::get('/', [PostController::class, 'getPublished'])->middleware('auth.sanctum');
     Route::get('/popular', [PostController::class, 'popularPosts']);
-    Route::get('/{id}', [PostController::class, 'publicShow']);
+    Route::get('/{postId}', [PostController::class, 'publicShow'])->middleware(['auth:sanctum', 'setUserId']);
     Route::get('/related/{postId}', [PostController::class, 'getRelatedPosts']);
     Route::get('/{postId}/view-count', [PostViewController::class, 'getViewCount']);
 
@@ -86,7 +86,7 @@ Route::middleware('auth:sanctum')->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth.sanctum')->group(function () {
 
     // Dashboard Analytics
     Route::get('/dashboard', [AnalyticsController::class, 'getDashboardAnalytics'])
