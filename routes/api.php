@@ -41,7 +41,6 @@ Route::prefix('posts')->group(function () {
     Route::get('/{postId}/view-count', [PostViewController::class, 'getViewCount']);
 
     // Auth required actions
-    Route::post('/{postId}/view', [PostViewController::class, 'recordView'])->middleware(['auth:sanctum', 'setUserId']);
     Route::post('/{id}/like', [PostController::class, 'toggleLikes'])->middleware('auth:sanctum');
 });
 

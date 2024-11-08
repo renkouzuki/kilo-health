@@ -81,7 +81,7 @@ class PostController extends Controller
             $post = $this->Repository->createPost($this->req);
             return response()->json(['success' => true, 'message' => 'Successfully created post', 'data' => $post], 201);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
+            return response()->json(['success' => false , 'message' => $e->getMessage() , 'errors' => $e->errors()] , 422); 
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -204,7 +204,7 @@ class PostController extends Controller
 
             return response()->json(['success' => true, 'message' => 'successfully to update post'], 200);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => 'Oops look like a validation errors occurred' , 'errors' => $e->errors()] , 422); 
+            return response()->json(['success' => false , 'message' => $e->getMessage() , 'errors' => $e->errors()] , 422); 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (Exception $e) {

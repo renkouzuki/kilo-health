@@ -25,17 +25,6 @@ class PostViewController extends Controller
         $this->pagination = new paginating();
     }
 
-    public function recordView(int $postId): JsonResponse
-    {
-        try {
-            $userId = $this->req->user()->id;
-            $this->Repository->recordView($postId, $userId);
-            return response()->json(['success' => true, 'message' => 'View recorded successfully'], 201);
-        } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
     public function getViewCount(int $postId): JsonResponse
     {
         try {

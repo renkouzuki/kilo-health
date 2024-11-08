@@ -43,7 +43,7 @@ class Authentication extends Controller
             event(new UserRegistered($user));
             return response()->json(['success' => true, 'message' => 'Registration successfully', 'token' => $token], 201);
         } catch (ValidationException $e) {
-            return response(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->errors()], 422);
+            return response(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             Log::error("error: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
@@ -70,7 +70,7 @@ class Authentication extends Controller
             event(new UserLoggedIn($user));
             return response()->json(['success' => true, 'message' => 'Login successfully', 'token' => $token], 200);
         } catch (ValidationException $e) {
-            return response(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->errors()], 422);
+            return response(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             Log("error: ", $e->getMessage());
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);

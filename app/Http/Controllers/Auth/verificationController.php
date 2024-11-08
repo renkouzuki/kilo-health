@@ -44,7 +44,7 @@ class verificationController extends Controller
                 'message' => 'Email verified successfully'
             ], 200);
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
@@ -83,7 +83,7 @@ class verificationController extends Controller
                 'message' => 'Verification OTP has been resent to your email'
             ], 200);
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => 'Oops look like a validation errors occurred', 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
