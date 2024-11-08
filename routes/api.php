@@ -254,8 +254,8 @@ Route::middleware('auth:sanctum')->group(function () {
 // });
 
 
-Route::put('/test' , function(Request $req){
+Route::get('/test' , function(Request $req){
     return [
-        'val1' => $req->input('name') 
+        'user' => $req->attributes->get('userId')
     ];
-});
+})->middleware(['setUserId']);
