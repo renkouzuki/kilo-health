@@ -1,1 +1,11 @@
 test api
+
+test params and make sure params working
+
+fix single detail frontend not working for guest account
+
+test site_settings
+
+check every error handling message correct grammar or not
+
+remove record view route away
