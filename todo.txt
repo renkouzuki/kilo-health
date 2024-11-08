@@ -2,6 +2,4 @@ test api
 
 test params and make sure params working
 
-fix single detail frontend not working for guest account
-
-check every error handling message correct grammar or not
+fix email make sure it can use in public too for easy to frontend

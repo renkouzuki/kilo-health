@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\auth_user;
 use App\Models\Role;
 use App\Models\User;
+use App\Traits\ValidationErrorFormatter;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ use Illuminate\Validation\ValidationException;
 
 class authenticate extends Controller
 {
+    use ValidationErrorFormatter;
+
     private Request $req;
     public function __construct(Request $req)
     {
@@ -44,6 +47,7 @@ class authenticate extends Controller
 
             if (!$user->sendOTP('verification')) {
                 return response()->json([
+                    'success' => false,
                     'message' => 'Failed to send OTP email'
                 ], 500);
             }
@@ -52,14 +56,18 @@ class authenticate extends Controller
             $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
 
             return response()->json([
-                'success' => true, 
-                'message' => 'Registration successfully', 
-                'token' => $token], 201);
+                'success' => true,
+                'message' => 'Successfully',
+                'token' => $token
+            ], 201);
         } catch (ValidationException $e) {
-            return response(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+
+            $formattedErrors = $this->formatValidationError($e->errors());
+
+            return response(['success' => false, 'message' => 'Unsuccessfully', 'errors' => $formattedErrors], 422);
         } catch (Exception $e) {
             Log::error("error: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => "Internal server errors"], 500);
         }
     }
 
@@ -74,11 +82,12 @@ class authenticate extends Controller
             $user = User::where('email', $validated['email'])->first();
 
             if (!$user || !Hash::check($validated['password'], $user->password)) {
-                return response(['success' => false, 'message' => "incorrect credential! >w<"]);
+                return response(['success' => false, 'message' => "Invalid email or password"], 422);
             }
 
             if (!$user->email_verified_at) {
                 return response()->json([
+                    'success' => false,
                     'message' => 'Please verify your email first'
                 ], 403);
             }
@@ -86,23 +95,26 @@ class authenticate extends Controller
             $expireDate = now()->addDays(7);
             $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
 
-            return response()->json(['success' => true, 'message' => 'Login successfully', 'token' => $token], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully', 'token' => $token], 200);
         } catch (ValidationException $e) {
-            return response(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+
+            $formattedErrors = $this->formatValidationError($e->errors());
+
+            return response(['success' => false, 'message' => 'Unsuccessfully', 'errors' => $formattedErrors], 422);
         } catch (Exception $e) {
             Log("error: ", $e->getMessage());
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => "Internal server errors"], 500);
         }
     }
 
     public function getUser()
     {
         try {
-            return response()->json(['success' => true, 'data' => new auth_user($this->req->user())], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully', 'data' => new auth_user($this->req->user())], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'User not found'], 500);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Unsuccessfully'], 500);
         }
     }
 
@@ -111,7 +123,7 @@ class authenticate extends Controller
 
         $this->req->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out successfully!']);
+        return response()->json(['success' => true, 'message' => 'Logged out successfully!'], 200);
     }
 
     public function updateUserInfo()
@@ -138,11 +150,11 @@ class authenticate extends Controller
 
             event(new UserInfoUpdated($user));
 
-            return response()->json(['success' => true, 'message' => 'User updated successfully', 'data' => $user], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully', 'data' => $user], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'User not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => "Internal server errors"], 500);
         }
     }
 
@@ -162,11 +174,12 @@ class authenticate extends Controller
 
             $user->save();
 
-            return response()->json(['success' => true, 'message' => 'Password changed successfully!'], 200);
-        }catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => $e->getMessage() , 'errors' => $e->errors()] , 422);
-        }catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => true, 'message' => 'Successfully'], 200);
+        } catch (ValidationException $e) {
+            $formattedErrors = $this->formatValidationError($e->errors());
+            return response()->json(['success' => false, 'message' => 'Unsuccessfully', 'errors' => $formattedErrors], 422);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Unsuccessfully'], 500);
         }
     }
 }

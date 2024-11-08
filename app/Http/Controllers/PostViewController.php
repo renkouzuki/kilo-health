@@ -29,9 +29,9 @@ class PostViewController extends Controller
     {
         try {
             $count = $this->Repository->getViewCount($postId);
-            return response()->json(['success' => true, 'message' => 'Successfully get view count', 'view_count' => $count], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully', 'view_count' => $count], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Failed to get view count', 'err' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -43,12 +43,12 @@ class PostViewController extends Controller
             $views = $this->Repository->getViewsByPost($postId , $search , $perPage);
             return response()->json([
                 'success' => true, 
-                'message' => 'Successfully get views', 
+                'message' => 'Successfully', 
                 'data' => post::collection($views),
                 'meta' => $this->pagination->metadata($views)
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -60,12 +60,12 @@ class PostViewController extends Controller
             $views = $this->Repository->getViewsByUser($userId , $search , $perPage);
             return response()->json([
                 'success' => true, 
-                'message' => 'Successfully get view by user', 
+                'message' => 'Successfully', 
                 'data' => user::collection($views),
                 'meta' => $this->pagination->metadata($views)
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -74,9 +74,9 @@ class PostViewController extends Controller
         try {
             $userId = $this->req->user()->id;
             $hasViewed = $this->Repository->hasUserViewedPost($postId, $userId);
-            return response()->json(['success' => true, 'message' => 'Successfully check if user has viewed post', 'has_viewed' => $hasViewed], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully', 'has_viewed' => $hasViewed], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 }

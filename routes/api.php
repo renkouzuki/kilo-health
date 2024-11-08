@@ -36,7 +36,7 @@ Route::prefix('posts')->group(function () {
     // Public viewing routes - no auth required
     Route::get('/', [PostController::class, 'getPublished']);
     Route::get('/popular', [PostController::class, 'popularPosts']);
-    Route::get('/{postId}', [PostController::class, 'publicShow'])->middleware(['auth:sanctum', 'setUserId']);
+    Route::get('/{postId}', [PostController::class, 'publicShow'])->middleware(['setUserId']);
     Route::get('/related/{postId}', [PostController::class, 'getRelatedPosts']);
     Route::get('/{postId}/view-count', [PostViewController::class, 'getViewCount']);
 
@@ -252,10 +252,3 @@ Route::middleware('auth:sanctum')->group(function () {
 //             }])->select(DB::raw('min(id) as id'), 'name')->groupBy('name')->get()
 //     ];
 // });
-
-
-Route::get('/test' , function(Request $req){
-    return [
-        'user' => $req->attributes->get('userId')
-    ];
-})->middleware(['setUserId']);

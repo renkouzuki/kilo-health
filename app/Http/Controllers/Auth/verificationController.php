@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Traits\ValidationErrorFormatter;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -11,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 
 class verificationController extends Controller
 {
+    use ValidationErrorFormatter;
+
     private Request $req;
 
     public function __construct(Request $req)
@@ -32,6 +35,7 @@ class verificationController extends Controller
 
             if (!$user || !$user->verifyOTP($this->req->otp)) {
                 return response()->json([
+                    'success' => false,
                     'message' => 'Invalid or expired OTP'
                 ], 400);
             }
@@ -44,9 +48,10 @@ class verificationController extends Controller
                 'message' => 'Email verified successfully'
             ], 200);
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            $formattedErrors = $this->formatValidationError($e->errors());
+            return response()->json(['success' => false, 'message' => 'Unseccessfully', 'errors' => $formattedErrors], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -61,12 +66,14 @@ class verificationController extends Controller
 
             if ($user->email_verified_at) {
                 return response()->json([
+                    'success' => false,
                     'message' => 'Email is already verified'
                 ], 400);
             }
 
             if (!$user->canRequestOTP()) {
                 return response()->json([
+                    'success' => false,
                     'message' => 'Please wait before requesting another OTP',
                     'retry_after' => $user->getOTPCooldownSeconds()
                 ], 429);
@@ -74,6 +81,7 @@ class verificationController extends Controller
 
             if (!$user->sendOTP('verification')) {
                 return response()->json([
+                    'success' => false,
                     'message' => 'Failed to send OTP email'
                 ], 500);
             }
@@ -83,9 +91,10 @@ class verificationController extends Controller
                 'message' => 'Verification OTP has been resent to your email'
             ], 200);
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
+            $formattedErrors = $this->formatValidationError($e->errors());
+            return response()->json(['success' => false, 'message' => 'Unseccessfully', 'errors' => $formattedErrors], 422);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 }

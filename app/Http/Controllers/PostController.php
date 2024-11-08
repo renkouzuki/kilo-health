@@ -13,6 +13,7 @@ use App\Repositories\Posts\PostInterface;
 use App\Strategies\ContentStrategy;
 use App\Strategies\HtmlStrategy;
 use App\Strategies\MarkdownStrategy;
+use App\Traits\ValidationErrorFormatter;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +24,8 @@ use InvalidArgumentException;
 
 class PostController extends Controller
 {
+    use ValidationErrorFormatter;
+
     private Request $req;
 
     protected $Repository;
@@ -42,12 +45,12 @@ class PostController extends Controller
             $posts = $this->Repository->getAllPosts($this->req, $this->req->per_page ?? 5);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully retrieved posts',
+                'message' => 'Successfully',
                 'data' => index::collection($posts),
                 'meta' => $this->pagination->metadata($posts)
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -57,12 +60,12 @@ class PostController extends Controller
             $posts = $this->Repository->getPublishedPosts($this->req, $this->req->per_page ?? 10);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully retrieving published posts',
+                'message' => 'Successfully',
                 'data' => publisIndex::collection($posts),
                 'meta' => $this->pagination->metadata($posts)
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -79,11 +82,12 @@ class PostController extends Controller
             ]);
 
             $post = $this->Repository->createPost($this->req);
-            return response()->json(['success' => true, 'message' => 'Successfully created post', 'data' => $post], 201);
+            return response()->json(['success' => true, 'message' => 'Successfully', 'data' => $post], 201);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => $e->getMessage() , 'errors' => $e->errors()] , 422); 
+            $formattedErrors = $this->formatValidationError($e->errors());
+            return response()->json(['success' => false , 'message' => 'Unsuccessfully'	 , 'errors' => $formattedErrors] , 422); 
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -94,11 +98,11 @@ class PostController extends Controller
             $popularPosts = $this->Repository->getPopularPosts($take, 30);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully retrieved popular posts',
+                'message' => 'Successfully',
                 'data' => publisIndex::collection($popularPosts)
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -110,13 +114,13 @@ class PostController extends Controller
             $post->rendered_content = $strategy->renderContent($post->content);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully retrieved post',
+                'message' => 'Successfully',
                 'data' => new show($post)
             ], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Post not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -127,21 +131,21 @@ class PostController extends Controller
             $photos = $this->Repository->displayPostPhotosById($id, $perPage);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully retrieved photos',
+                'message' => 'Successfully',
                 'data' => post_photo::collection($photos),
                 'meta' => $this->pagination->metadata($photos)
             ], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Photo not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
     public function publicShow(int $postId): JsonResponse
     {
         try {
-            $result = $this->Repository->getPostByIdForPublic($postId , $this->req->user()->id);
+            $result = $this->Repository->getPostByIdForPublic($postId , $this->req->attributes->get('userId'));
             $post = $result['post'] ?? null;
             if(!$post){
                 return response()->json(['success' => false, 'message' => 'Post not found'], 404);
@@ -150,13 +154,13 @@ class PostController extends Controller
             $post->rendered_content = $strategy->renderContent($post->content);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully retrieved post',
+                'message' => 'Successfully',
                 'data' => new publishShow($post),
             ], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Post not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -167,13 +171,13 @@ class PostController extends Controller
             $relatedPosts = $this->Repository->getRelatedPosts($postId , $take);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully retrieved related posts',
+                'message' => 'Successfully',
                 'data' => publisIndex::collection($relatedPosts)
             ], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Post not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -202,13 +206,14 @@ class PostController extends Controller
 
             $this->Repository->updatePost($id, $this->req);
 
-            return response()->json(['success' => true, 'message' => 'successfully to update post'], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully'], 200);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => $e->getMessage() , 'errors' => $e->errors()] , 422); 
+            $formattedErrors = $this->formatValidationError($e->errors());
+            return response()->json(['success' => false , 'message' => 'Unsuccessfully' , 'errors' => $formattedErrors] , 422); 
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Post that got publish not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -218,9 +223,9 @@ class PostController extends Controller
             $this->Repository->publishPost($id);
             return response()->json(['success' => true, 'message' => 'Post published successfully'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Post not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -228,11 +233,11 @@ class PostController extends Controller
     {
         try {
             $this->Repository->unpublishPost($id);
-            return response()->json(['success' => true, 'message' => 'Post unpublished successfully'], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Post not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -243,17 +248,17 @@ class PostController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Post like status updated successfully'
+                'message' => 'Successfully'
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Post not found'
             ], 404);
         } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => 'Internal server errors'
             ], 500);
         }
     }
@@ -263,13 +268,13 @@ class PostController extends Controller
         try {
             $deleted = $this->Repository->deletePost($id);
             if (!$deleted) {
-                return response()->json(['message' => 'Post not found'], 404);
+                return response()->json(['success'=>false ,'message' => 'Post not found'], 404);
             }
-            return response()->json(['success' => true, 'message' => 'Successfully deleted post'], 204);
+            return response()->json(['success' => true, 'message' => 'Successfully'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Post not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -277,11 +282,11 @@ class PostController extends Controller
     {
         try {
             $this->Repository->restorePost($id);
-            return response()->json(['success' => true, 'message' => 'Post restored successfully'], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Post not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -289,11 +294,11 @@ class PostController extends Controller
     {
         try {
             $this->Repository->forceDeletePost($id);
-            return response()->json(['success' => true, 'message' => 'Successfully to permenantly delete post'], 204);
+            return response()->json(['success' => true, 'message' => 'Successfully'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Post not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -303,12 +308,12 @@ class PostController extends Controller
             $trashedPosts = $this->Repository->getTrashedPosts($this->req, $this->req->per_page ?? 10);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully retrieving trashed posts',
+                'message' => 'Successfully',
                 'data' => index::collection($trashedPosts),
                 'meta' => $this->pagination->metadata($trashedPosts)
             ], 200);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 

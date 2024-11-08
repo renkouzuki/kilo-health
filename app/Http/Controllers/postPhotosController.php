@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\PostPhotos\index;
 use App\pagination\paginating;
 use App\Repositories\postPhotos\postPhotosInterface;
+use App\Traits\ValidationErrorFormatter;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class postPhotosController extends Controller
 {
+    use ValidationErrorFormatter;
+
     private Request $req;
 
     protected $Repository;
@@ -32,12 +35,12 @@ class postPhotosController extends Controller
             $medias = $this->Repository->getMediaByPost($id, $perPage);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully get media',
+                'message' => 'Successfully',
                 'data' => index::collection($medias),
                 'meta' => $this->pagination->metadata($medias)
             ]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -45,11 +48,11 @@ class postPhotosController extends Controller
     {
         try {
             $media = $this->Repository->getMediaById($id);
-            return response()->json(['success' => true, 'message' => 'Successfully get media', 'media' => new index($media)], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully', 'data' => new index($media)], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Photo not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -60,11 +63,12 @@ class postPhotosController extends Controller
                 'file.*' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             ]);
             $arr = $this->Repository->uploadMedia($this->req, $id);
-            return response()->json(['success' => true, 'message' => 'Successfully uploaded' , 'data'=>$arr], 201);
+            return response()->json(['success' => true, 'message' => 'Successfully' , 'data'=>$arr], 201);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => $e->getMessage() , 'errors' => $e->errors()] , 422); 
+            $formattedErrors = $this->formatValidationError($e->errors());
+            return response()->json(['success' => false , 'message' => 'Unsuccessfully' , 'errors' => $formattedErrors] , 422); 
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -78,13 +82,14 @@ class postPhotosController extends Controller
 
             $this->Repository->updateMedia($this->req, $id);
 
-            return response()->json(['success' => true, 'message' => 'Successfully updated'], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully'], 200);
         } catch(ValidationException $e){
-            return response()->json(['success' => false , 'message' => $e->getMessage() , 'errors' => $e->errors()] , 422); 
+            $formattedErrors = $this->formatValidationError($e->errors());
+            return response()->json(['success' => false , 'message' => 'Unsuccessfully' , 'errors' => $formattedErrors] , 422); 
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Photo not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -92,11 +97,11 @@ class postPhotosController extends Controller
     {
         try {
             $this->Repository->deleteMedia($id);
-            return response()->json(['success' => true, 'message' => 'Successfully deleted media'], 200);
+            return response()->json(['success' => true, 'message' => 'Successfully'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Photo not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -106,20 +111,20 @@ class postPhotosController extends Controller
             $this->Repository->restoreMedia($id);
             return response()->json(['success' => true, 'message' => 'Successfully restored media'], 200);
         } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Photo not found'], 404);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
     public function forceDelete(int $id) {
         try{
             $this->Repository->forceDeleteMedia($id);
-            return response()->json(['success' => true, 'message' => 'Successfully permenantly deleted media'], 204);
+            return response()->json(['success' => true, 'message' => 'Successfully'], 200);
         }catch(ModelNotFoundException $e){
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json(['success' => false, 'message' => 'Photo not found'], 404);
         }catch(Exception $e){
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 
@@ -132,12 +137,12 @@ class postPhotosController extends Controller
             $medias = $this->Repository->getTrashedMedia($search, $perPage);
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully get trashed media',
+                'message' => 'Successfully',
                 'data' => index::collection($medias),
                 'meta' => $this->pagination->metadata($medias)
             ]);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['success' => false, 'message' => 'Internal server errors'], 500);
         }
     }
 }
