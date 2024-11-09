@@ -52,13 +52,9 @@ class authenticate extends Controller
                 ], 500);
             }
 
-            $expireDate = now()->addDays(7);
-            $token = $user->createToken('my_token', expiresAt: $expireDate)->plainTextToken;
-
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully',
-                'token' => $token
+                'message' => 'Register successfully please go your email to verify your account',
             ], 201);
         } catch (ValidationException $e) {
 
